@@ -1,24 +1,31 @@
-# SyntaxDevopsSquad (SDS) 
+# SyntaxDevopsSquad - SDS 
 
-Repository for vores DevOps-projekt. Vi bygger en skalerbar web-applikation med Go og Terraform.
+Welcome to the **SyntaxDevopsSquad** main repository. This project is part of our 2026 DevOps module, focusing on automation, transparency, and professional development conventions.
 
 ## Tech Stack
-- **Backend:** Go 1.24+
+- **Language:** Go 1.24+
 - **Database:** SQLite
-- **Infrastructure:** Terraform
-- **Konventioner:** Conventional Commits
+- **Infrastructure:** Terraform & Azure CLI
+- **Runtime:** WSL (Ubuntu 24.04)
 
-## Git Konventioner
-Vi bruger formatet: `<type>: <beskrivelse>`
-- `feat`: Ny funktionalitet.
-- `fix`: Fejlrettelse.
-- `ci`: Ændringer i build/workflows.
-- `docs`: Dokumentation.
+## Conventions
 
-## Kom i gang
-1. Initialisér databasen:
-   ```bash
-   go run init_db.go
+### Git Commit Standard
+We follow **Conventional Commits** to ensure a clean and readable history:
+- `feat`: New functionality.
+- `fix`: Bug fixes.
+- `refactor`: Code optimization without changing logic.
+- `docs`: Documentation (README, reports).
+- `ci`: CI/CD (GitHub Actions, build scripts).
+- `test`: Unit or integration tests.
+- `style`: Formatting and style.
 
-# devops-syntaxsquad
-3831813ce98f860ebea9699bb88a75b2cce237f9
+**Format:** `<type>: <description>`  
+*Example:* `feat: setup Go project with SQLite and database initialization`
+
+## Getting Started
+
+### Prerequisites
+Ensure Go is installed in your WSL/Linux terminal:
+```bash
+go version
