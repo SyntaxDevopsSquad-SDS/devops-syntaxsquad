@@ -1,0 +1,12 @@
+# Database
+*.db
+*.sqlite
+
+# Go binaries
+whoknows
+bin/
+
+#OS/IDE skrald
+.DS_Store
+.vscode/
+.idea/
