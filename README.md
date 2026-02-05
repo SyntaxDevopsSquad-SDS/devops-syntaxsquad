@@ -19,3 +19,6 @@ Vi bruger formatet: `<type>: <beskrivelse>`
 1. Initialisér databasen:
    ```bash
    go run init_db.go
+
+# devops-syntaxsquad
+3831813ce98f860ebea9699bb88a75b2cce237f9
