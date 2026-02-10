@@ -1,12 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+.pytest_cache/
+
 # Database
 *.db
 *.sqlite
+*.sqlite3
 
-# Go binaries
-whoknows
-bin/
-
-#OS/IDE skrald
-.DS_Store
-.vscode/
+# IDE
 .idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# OS
+Thumbs.db
+
+# Backup files
+*.bak
+*_backup_*/
+DevOps_backup_*/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/vendor/
+
+# Logs
+*.log
