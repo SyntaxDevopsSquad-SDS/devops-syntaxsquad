@@ -1,0 +1,78 @@
+digraph WhoKnows {
+    label="WhoKnows System Dependency Graph"
+    rankdir=LR
+    node [shape=box, style=rounded]
+    
+    // Main application
+    App [label="app.py\n(Flask Application)", shape=box, style="filled,rounded", fillcolor=lightblue]
+    
+    // Python Dependencies
+    Flask [label="Flask 3.1.2", shape=ellipse, fillcolor=lightgreen, style=filled]
+    Werkzeug [label="Werkzeug 3.1.5", shape=ellipse, fillcolor=lightgreen, style=filled]
+    Jinja2 [label="Jinja2 3.1.6", shape=ellipse, fillcolor=lightgreen, style=filled]
+    SQLite3 [label="sqlite3\n(built-in)", shape=ellipse, fillcolor=lightgreen, style=filled]
+    Hashlib [label="hashlib\n(built-in)", shape=ellipse, fillcolor=lightgreen, style=filled]
+    
+    // Flask sub-dependencies
+    Click [label="click 8.3.1", shape=ellipse, fillcolor=wheat, style=filled]
+    Blinker [label="blinker 1.9.0", shape=ellipse, fillcolor=wheat, style=filled]
+    ItsDangerous [label="itsdangerous 2.2.0", shape=ellipse, fillcolor=wheat, style=filled]
+    MarkupSafe [label="MarkupSafe 3.0.3", shape=ellipse, fillcolor=wheat, style=filled]
+    
+    // Database
+    Database [label="whoknows.db\n(SQLite)", shape=cylinder, fillcolor=yellow, style=filled]
+    Schema [label="schema.sql", shape=note, fillcolor=lightyellow, style=filled]
+    
+    // Tables
+    UsersTable [label="users table", shape=folder, fillcolor=orange, style=filled]
+    PagesTable [label="pages table", shape=folder, fillcolor=orange, style=filled]
+    
+    // Templates
+    Templates [label="templates/", shape=folder, fillcolor=lightgray, style=filled]
+    SearchHTML [label="search.html", shape=note]
+    LoginHTML [label="login.html", shape=note]
+    RegisterHTML [label="register.html", shape=note]
+    AboutHTML [label="about.html", shape=note]
+    
+    // Static files
+    Static [label="static/", shape=folder, fillcolor=lightgray, style=filled]
+    StyleCSS [label="style.css", shape=note]
+    
+    // Script
+    RunForever [label="run_forever.sh", shape=box, fillcolor=pink, style=filled]
+    
+    // Main dependencies
+    App -> Flask [label="imports"]
+    App -> SQLite3 [label="imports"]
+    App -> Hashlib [label="imports"]
+    
+    // Flask dependencies
+    Flask -> Werkzeug [label="depends on"]
+    Flask -> Jinja2 [label="depends on"]
+    Flask -> Click [label="depends on"]
+    Flask -> Blinker [label="depends on"]
+    Flask -> ItsDangerous [label="depends on"]
+    
+    // Jinja2 dependency
+    Jinja2 -> MarkupSafe [label="depends on"]
+    
+    // Database relationships
+    App -> Database [label="reads/writes"]
+    Schema -> Database [label="creates", style=dashed]
+    Database -> UsersTable [label="contains"]
+    Database -> PagesTable [label="contains"]
+    
+    // Template relationships
+    App -> Templates [label="renders"]
+    Templates -> SearchHTML
+    Templates -> LoginHTML
+    Templates -> RegisterHTML
+    Templates -> AboutHTML
+    
+    // Static files
+    App -> Static [label="serves"]
+    Static -> StyleCSS
+    
+    // Script relationship
+    RunForever -> App [label="executes", style=bold, color=red]
+}
