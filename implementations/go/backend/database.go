@@ -50,3 +50,19 @@ func main() {
 	}
 	defer db.Close()
 }
+
+func getUserID(db *sql.DB, username string) (int, error) {
+	// Prepare the SQL statement to prevent SQL INJECTION vulnerabilities.
+	statement, err := db.Prepare("SELECT id FROM users WHERE username = ?")
+	if err != nil {
+		return 0, fmt.Errorf("failed to prepare statement: %w", err)
+	}
+	defer statement.Close()
+
+	var id int
+	err = statement.QueryRow(username).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("failed to query user ID: %w", err)
+	}
+	return id, nil
+}
