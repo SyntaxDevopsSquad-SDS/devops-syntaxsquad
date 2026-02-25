@@ -139,3 +139,49 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
     http.Redirect(w, r, "/", http.StatusFound)
 }
 
+func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
+    if r.Method != "POST" {
+        http.Redirect(w, r, "/register", http.StatusFound)
+        return
+    }
+
+    username := r.FormValue("username")
+    email := r.FormValue("email")
+    password := r.FormValue("password")
+    password2 := r.FormValue("password2")
+
+    // Validering
+    if username == "" || email == "" || password == "" {
+        tmpl, _ := template.ParseFiles("../templates/layout.html", "../templates/register.html")
+        tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "All fields are required"})
+        return
+    }
+
+    if password != password2 {
+        tmpl, _ := template.ParseFiles("../templates/layout.html", "../templates/register.html")
+        tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Passwords do not match"})
+        return
+    }
+
+    // Tjek om bruger allerede eksisterer
+    var exists int
+    db.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", username).Scan(&exists)
+    if exists > 0 {
+        tmpl, _ := template.ParseFiles("../templates/layout.html", "../templates/register.html")
+        tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Username already taken"})
+        return
+    }
+
+    // Hash password og gem bruger
+    hashedPassword := hashPassword(password)
+    _, err := db.Exec("INSERT INTO users (username, email, pw_hash) VALUES (?, ?, ?)",
+        username, email, hashedPassword)
+    if err != nil {
+        tmpl, _ := template.ParseFiles("../templates/layout.html", "../templates/register.html")
+        tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Could not create user"})
+        return
+    }
+
+    // Register success - redirect til login
+    http.Redirect(w, r, "/login", http.StatusFound)
+}
