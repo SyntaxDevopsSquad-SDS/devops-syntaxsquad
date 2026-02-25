@@ -20,6 +20,7 @@ func main() {
 
     // 4. API routes
     http.HandleFunc("/api/login", apiLoginHandler)
+		http.HandleFunc("/api/logout", logoutHandler)
     http.HandleFunc("/api/register", apiRegisterHandler)
 
     // 4. Start serveren

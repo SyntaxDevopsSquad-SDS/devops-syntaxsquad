@@ -1,9 +1,10 @@
 package main
 
 import (
+    "fmt"
     "html/template"
     "net/http"
-    "fmt"
+
     "github.com/gorilla/sessions"
 )
 
@@ -27,6 +28,19 @@ type Page struct {
     Content  string
     Language string
     URL      string
+}
+
+// Helper funktion - henter den loggede bruger fra session
+func getSessionUser(r *http.Request) string {
+    session, err := store.Get(r, "session")
+    if err != nil {
+        return ""
+    }
+    user, ok := session.Values["user"].(string)
+    if !ok {
+        return ""
+    }
+    return user
 }
 
 func searchHandler(w http.ResponseWriter, r *http.Request) {
@@ -70,6 +84,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     data := SearchPageData{
+        BaseData:      BaseData{User: getSessionUser(r)},
         SearchResults: searchResults,
         Query:         query,
     }
@@ -86,7 +101,7 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Template error", http.StatusInternalServerError)
         return
     }
-    tmpl.ExecuteTemplate(w, "layout", BaseData{})
+    tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r)})
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +113,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Template error", http.StatusInternalServerError)
         return
     }
-    tmpl.ExecuteTemplate(w, "layout", BaseData{})
+    tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r)})
 }
 
 func registerHandler(w http.ResponseWriter, r *http.Request) {
@@ -110,7 +125,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Template error", http.StatusInternalServerError)
         return
     }
-    tmpl.ExecuteTemplate(w, "layout", BaseData{})
+    tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r)})
 }
 
 /*
@@ -128,7 +143,7 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
     password := r.FormValue("password")
 
     var storedHash string
-    err := db.QueryRow("SELECT pw_hash FROM users WHERE username = ?", username).Scan(&storedHash)
+    err := db.QueryRow("SELECT password FROM users WHERE username = ?", username).Scan(&storedHash)
     if err != nil {
         // Vis den præcise fejl i terminalen
         fmt.Println("Login fejl:", err)
@@ -144,11 +159,19 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Login success - gem session
+    // Gem session
     session, _ := store.Get(r, "session")
     session.Values["user"] = username
     session.Save(r, w)
 
+    http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+    session, _ := store.Get(r, "session")
+    // Slet session
+    delete(session.Values, "user")
+    session.Save(r, w)
     http.Redirect(w, r, "/", http.StatusFound)
 }
 
@@ -187,7 +210,7 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 
     // Hash password og gem bruger
     hashedPassword := hashPassword(password)
-    _, err := db.Exec("INSERT INTO users (username, email, pw_hash) VALUES (?, ?, ?)",
+    _, err := db.Exec("INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
         username, email, hashedPassword)
     if err != nil {
         // Vis den præcise fejl i terminalen
