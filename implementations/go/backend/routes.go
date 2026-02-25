@@ -108,3 +108,34 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
     }
     tmpl.ExecuteTemplate(w, "layout", BaseData{})
 }
+
+func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
+    if r.Method != "POST" {
+        http.Redirect(w, r, "/login", http.StatusFound)
+        return
+    }
+
+    username := r.FormValue("username")
+    password := r.FormValue("password")
+
+    // Hent bruger fra databasen
+    var storedHash string
+    err := db.QueryRow("SELECT pw_hash FROM users WHERE username = ?", username).Scan(&storedHash)
+    if err != nil {
+        // Bruger ikke fundet
+        tmpl, _ := template.ParseFiles("../templates/layout.html", "../templates/login.html")
+        tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Invalid username or password"})
+        return
+    }
+
+    // Verificer password
+    if !verifyPassword(storedHash, password) {
+        tmpl, _ := template.ParseFiles("../templates/layout.html", "../templates/login.html")
+        tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Invalid username or password"})
+        return
+    }
+
+    // Login success - redirect til forsiden
+    http.Redirect(w, r, "/", http.StatusFound)
+}
+
