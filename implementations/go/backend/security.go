@@ -10,3 +10,8 @@ func hashPassword(password string) string {
 	hash := md5.Sum([]byte(password))
 	return fmt.Sprintf("%x", hash)
 }
+
+// verifyPassword compares a plaintext password with a stored MD5 hash and returns true if they match.
+func verifyPassword(storedHash string, password string) bool {
+	return storedHash == hashPassword(password)
+}
