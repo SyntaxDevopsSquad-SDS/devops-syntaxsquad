@@ -13,6 +13,9 @@ import (
 // CONFIGURATION: The path to the physical database file used by the application.
 const dbPath = "whoknows.db"
 
+// Global db variabel - kan bruges i alle filer
+var db *sql.DB
+
 // checkDBExists verifies if the database file is physically present on the disk.
 func checkDBExists() bool {
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
@@ -22,7 +25,7 @@ func checkDBExists() bool {
 }
 
 // ConnectDB initiates a connection, checks for file existence, and pings the database.
-func ConnectDB() (*sql.DB, error) {
+func connectDB() (*sql.DB, error) {
 	if !checkDBExists() {
 		fmt.Printf("Critical Error: Database file not found at %s\n", dbPath)
 		os.Exit(1)
@@ -40,15 +43,6 @@ func ConnectDB() (*sql.DB, error) {
 
 	fmt.Println("Connection Status: Successfully connected to whoknows.db")
 	return db, nil
-}
-
-func main() {
-	db, err := ConnectDB()
-	if err != nil {
-		fmt.Printf("Initialization failed: %v\n", err)
-		return
-	}
-	defer db.Close()
 }
 
 func getUserID(db *sql.DB, username string) (int, error) {
