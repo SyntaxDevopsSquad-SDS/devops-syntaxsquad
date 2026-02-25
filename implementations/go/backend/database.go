@@ -25,27 +25,30 @@ func checkDBExists() bool {
 }
 
 // ConnectDB initiates a connection, checks for file existence, and pings the database.
-func connectDB() (*sql.DB, error) {
+func connectDB() {
 	if !checkDBExists() {
 		fmt.Printf("Critical Error: Database file not found at %s\n", dbPath)
 		os.Exit(1)
 	}
 
-	db, err := sql.Open("sqlite", dbPath)
+	var err error
+	// ⚠️ Vigtigt: brug den globale db variabel, IKKE en lokal!
+	db, err = sql.Open("sqlite", dbPath)
 	if err != nil {
-		return nil, fmt.Errorf("could not open database: %w", err)
+		fmt.Printf("could not open database: %v\n", err)
+		os.Exit(1)
 	}
 
-	// Ping confirms that the connection is active and the file is readable.
 	if err = db.Ping(); err != nil {
-		return nil, fmt.Errorf("database ping failed: %w", err)
+		fmt.Printf("database ping failed: %v\n", err)
+		os.Exit(1)
 	}
 
 	fmt.Println("Connection Status: Successfully connected to whoknows.db")
-	return db, nil
 }
 
-func getUserID(db *sql.DB, username string) (int, error) {
+// Fjern db *sql.DB parameter - brug den globale db
+func getUserID(username string) (int, error) {
 	// Prepare the SQL statement to prevent SQL INJECTION vulnerabilities.
 	statement, err := db.Prepare("SELECT id FROM users WHERE username = ?")
 	if err != nil {

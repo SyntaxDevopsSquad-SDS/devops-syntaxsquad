@@ -18,6 +18,10 @@ func main() {
     http.HandleFunc("/login", loginHandler)
     http.HandleFunc("/register", registerHandler)
 
+    // 4. API routes
+    http.HandleFunc("/api/login", apiLoginHandler)
+    http.HandleFunc("/api/register", apiRegisterHandler)
+
     // 4. Start serveren
     fmt.Println("Server starter på port 8080...")
     log.Fatal(http.ListenAndServe(":8080", nil))

@@ -3,7 +3,11 @@ package main
 import (
     "html/template"
     "net/http"
+    "fmt"
+    "github.com/gorilla/sessions"
 )
+
+var store = sessions.NewCookieStore([]byte("secret-key"))
 
 // BaseData indeholder data som alle sider bruger
 type BaseData struct {
@@ -109,6 +113,11 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
     tmpl.ExecuteTemplate(w, "layout", BaseData{})
 }
 
+/*
+################################################################################
+# API Endpoints
+################################################################################*/
+
 func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
     if r.Method != "POST" {
         http.Redirect(w, r, "/login", http.StatusFound)
@@ -118,13 +127,13 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
     username := r.FormValue("username")
     password := r.FormValue("password")
 
-    // Hent bruger fra databasen
     var storedHash string
     err := db.QueryRow("SELECT pw_hash FROM users WHERE username = ?", username).Scan(&storedHash)
     if err != nil {
-        // Bruger ikke fundet
+        // Vis den præcise fejl i terminalen
+        fmt.Println("Login fejl:", err)
         tmpl, _ := template.ParseFiles("../templates/layout.html", "../templates/login.html")
-        tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Invalid username or password"})
+        tmpl.ExecuteTemplate(w, "layout", BaseData{Error: err.Error()})
         return
     }
 
@@ -135,7 +144,11 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Login success - redirect til forsiden
+    // Login success - gem session
+    session, _ := store.Get(r, "session")
+    session.Values["user"] = username
+    session.Save(r, w)
+
     http.Redirect(w, r, "/", http.StatusFound)
 }
 
@@ -177,8 +190,10 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
     _, err := db.Exec("INSERT INTO users (username, email, pw_hash) VALUES (?, ?, ?)",
         username, email, hashedPassword)
     if err != nil {
+        // Vis den præcise fejl i terminalen
+        fmt.Println("Register fejl:", err)
         tmpl, _ := template.ParseFiles("../templates/layout.html", "../templates/register.html")
-        tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Could not create user"})
+        tmpl.ExecuteTemplate(w, "layout", BaseData{Error: err.Error()})
         return
     }
 
