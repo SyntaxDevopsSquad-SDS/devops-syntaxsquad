@@ -10,6 +10,15 @@ import (
 
 var store = sessions.NewCookieStore([]byte("secret-key"))
 
+func init() {
+    store.Options = &sessions.Options{
+        Path:     "/",
+        MaxAge:   86400 * 7, // 7 dage
+        HttpOnly: true,
+        SameSite: http.SameSiteLaxMode,
+    }
+}
+
 // BaseData indeholder data som alle sider bruger
 type BaseData struct {
     User  string
@@ -84,9 +93,9 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     data := SearchPageData{
-	BaseData:      BaseData{User: getUserFromContext(r)},
-	SearchResults: searchResults,
-	Query:         query,
+        BaseData:      BaseData{User: getSessionUser(r)},
+        SearchResults: searchResults,
+        Query:         query,
     }
 
     tmpl.ExecuteTemplate(w, "layout", data)
@@ -101,7 +110,7 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Template error", http.StatusInternalServerError)
         return
     }
-    tmpl.ExecuteTemplate(w, "layout", BaseData{User: getUserFromContext(r)})
+    tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r)})
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +122,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Template error", http.StatusInternalServerError)
         return
     }
-    tmpl.ExecuteTemplate(w, "layout", BaseData{User: getUserFromContext(r)})
+    tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r)})
 }
 
 func registerHandler(w http.ResponseWriter, r *http.Request) {
@@ -125,7 +134,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Template error", http.StatusInternalServerError)
         return
     }
-    tmpl.ExecuteTemplate(w, "layout", BaseData{User: getUserFromContext(r)})
+    tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r)})
 }
 
 /*

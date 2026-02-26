@@ -19,10 +19,10 @@ func main() {
     http.HandleFunc("/login", WithUser(loginHandler))
     http.HandleFunc("/register", WithUser(registerHandler))
 
-    // 4. API routes
-    http.HandleFunc("/api/login", WithUser(apiLoginHandler))
-    http.HandleFunc("/api/logout", WithUser(logoutHandler))
-    http.HandleFunc("/api/register", WithUser(apiRegisterHandler))
+    // 4. API routes - INGEN WithUser her da de håndterer session selv
+    http.HandleFunc("/api/login", apiLoginHandler)
+    http.HandleFunc("/api/logout", logoutHandler)
+    http.HandleFunc("/api/register", apiRegisterHandler)
 
     // 5. Start serveren
     fmt.Println("Server starter på port 8080...")
