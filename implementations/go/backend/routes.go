@@ -84,9 +84,9 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     data := SearchPageData{
-	BaseData:      BaseData{User: getUserFromContext(r)},
-	SearchResults: searchResults,
-	Query:         query,
+        BaseData:      BaseData{User: getSessionUser(r)},
+        SearchResults: searchResults,
+        Query:         query,
     }
 
     tmpl.ExecuteTemplate(w, "layout", data)
@@ -101,7 +101,7 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Template error", http.StatusInternalServerError)
         return
     }
-    tmpl.ExecuteTemplate(w, "layout", BaseData{User: getUserFromContext(r)})
+    tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r)})
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -113,7 +113,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Template error", http.StatusInternalServerError)
         return
     }
-    tmpl.ExecuteTemplate(w, "layout", BaseData{User: getUserFromContext(r)})
+    tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r)})
 }
 
 func registerHandler(w http.ResponseWriter, r *http.Request) {
@@ -125,7 +125,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
         http.Error(w, "Template error", http.StatusInternalServerError)
         return
     }
-    tmpl.ExecuteTemplate(w, "layout", BaseData{User: getUserFromContext(r)})
+    tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r)})
 }
 
 /*
