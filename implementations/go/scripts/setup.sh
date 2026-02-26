@@ -64,6 +64,10 @@ sudo chown -R www-data:www-data /opt/whoknows/implementations/go/backend
 sudo chmod 755 /opt/whoknows/implementations/go/backend
 sudo chmod 664 /opt/whoknows/implementations/go/backend/whoknows.db
 
+# Tilføj Go til PATH for alle brugere
+echo 'export PATH=$PATH:/usr/local/go/bin' | sudo tee /etc/profile.d/go.sh
+source /etc/profile.d/go.sh
+
 echo "=== Building Go app ==="
 cd /opt/whoknows/implementations/go/backend
 go build -o whoknows .
