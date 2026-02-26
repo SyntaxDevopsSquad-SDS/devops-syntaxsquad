@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export PATH=$PATH:/usr/local/go/bin
+
 echo "=== Pulling latest changes from GitHub ==="
 cd /opt/whoknows
 GIT_SSH_COMMAND="ssh -i ~/.ssh/github_key" git pull origin main
