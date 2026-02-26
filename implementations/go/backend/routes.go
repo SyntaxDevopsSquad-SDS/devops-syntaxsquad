@@ -10,6 +10,15 @@ import (
 
 var store = sessions.NewCookieStore([]byte("secret-key"))
 
+func init() {
+    store.Options = &sessions.Options{
+        Path:     "/",
+        MaxAge:   86400 * 7, // 7 dage
+        HttpOnly: true,
+        SameSite: http.SameSiteLaxMode,
+    }
+}
+
 // BaseData indeholder data som alle sider bruger
 type BaseData struct {
     User  string
