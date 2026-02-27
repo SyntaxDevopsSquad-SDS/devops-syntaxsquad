@@ -83,6 +83,15 @@ echo "=== Removing swap ==="
 sudo swapoff /swapfile
 sudo rm /swapfile
 
+echo "=== Enter a strong SECRET_KEY for session encryption ==="
+read -rsp "SECRET_KEY: " SECRET_KEY
+echo ""
+
+if [ -z "$SECRET_KEY" ]; then
+    echo "❌ SECRET_KEY cannot be empty"
+    exit 1
+fi
+
 echo "=== Setting up systemd service ==="
 sudo tee /etc/systemd/system/whoknows.service > /dev/null <<EOF
 [Unit]
@@ -95,6 +104,8 @@ ExecStart=/opt/whoknows/implementations/go/backend/whoknows
 Restart=always
 RestartSec=3
 User=www-data
+Environment="SECRET_KEY=${SECRET_KEY}"
+Environment="DB_PATH=/opt/whoknows/implementations/go/backend/whoknows.db"
 
 [Install]
 WantedBy=multi-user.target

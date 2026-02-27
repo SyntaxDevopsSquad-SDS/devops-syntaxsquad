@@ -1,39 +1,41 @@
 package main
 
-// Download needed dependencies: Standard libraries for SQL, formatting, and OS interaction
 import (
 	"database/sql"
 	"fmt"
 	"os"
 
-	// SQLite driver required for the database/sql package to communicate with the file.
 	_ "modernc.org/sqlite"
 )
 
-// CONFIGURATION: The path to the physical database file used by the application.
-const dbPath = "whoknows.db"
+// dbPath reads the database path from the DB_PATH environment variable,
+// falling back to "whoknows.db" if not set.
+func getDBPath() string {
+	if path := os.Getenv("DB_PATH"); path != "" {
+		return path
+	}
+	return "whoknows.db"
+}
 
 // Global db variabel - kan bruges i alle filer
 var db *sql.DB
 
-// checkDBExists verifies if the database file is physically present on the disk.
 func checkDBExists() bool {
-	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+	if _, err := os.Stat(getDBPath()); os.IsNotExist(err) {
 		return false
 	}
 	return true
 }
 
-// ConnectDB initiates a connection, checks for file existence, and pings the database.
+// connectDB initiates a connection, checks for file existence, and pings the database.
 func connectDB() {
 	if !checkDBExists() {
-		fmt.Printf("Critical Error: Database file not found at %s\n", dbPath)
+		fmt.Printf("Critical Error: Database file not found at %s\n", getDBPath())
 		os.Exit(1)
 	}
 
 	var err error
-	// ⚠️ Vigtigt: brug den globale db variabel, IKKE en lokal!
-	db, err = sql.Open("sqlite", dbPath)
+	db, err = sql.Open("sqlite", getDBPath())
 	if err != nil {
 		fmt.Printf("could not open database: %v\n", err)
 		os.Exit(1)
@@ -44,7 +46,7 @@ func connectDB() {
 		os.Exit(1)
 	}
 
-	fmt.Println("Connection Status: Successfully connected to whoknows.db")
+	fmt.Println("Connection Status: Successfully connected to", getDBPath())
 }
 
 // Fjern db *sql.DB parameter - brug den globale db
