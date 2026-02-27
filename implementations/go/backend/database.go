@@ -48,7 +48,58 @@ func connectDB() {
 
 	fmt.Println("Connection Status: Successfully connected to", getDBPath())
 }
+// QueryDB executes a query and returns results as a slice of maps
+func QueryDB(query string, args []interface{}, one bool) (interface{}, error) {
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("query execution failed: %w", err)
+	}
+	defer rows.Close()
 
+	columns, err := rows.Columns()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get columns: %w", err)
+	}
+
+	var results []map[string]interface{}
+
+	for rows.Next() {
+		values := make([]interface{}, len(columns))
+		valuePtrs := make([]interface{}, len(columns))
+		for i := range columns {
+			valuePtrs[i] = &values[i]
+		}
+
+		if err := rows.Scan(valuePtrs...); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+
+		rowMap := make(map[string]interface{})
+		for i, col := range columns {
+			val := values[i]
+			if b, ok := val.([]byte); ok {
+				rowMap[col] = string(b)
+			} else {
+				rowMap[col] = val
+			}
+		}
+
+		results = append(results, rowMap)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating rows: %w", err)
+	}
+
+	if one {
+		if len(results) > 0 {
+			return results[0], nil
+		}
+		return nil, nil
+	}
+
+	return results, nil
+}
 // Fjern db *sql.DB parameter - brug den globale db
 func getUserID(username string) (int, error) {
 	// Prepare the SQL statement to prevent SQL INJECTION vulnerabilities.
