@@ -48,7 +48,23 @@ dmypy.json
 .ipynb_checkpoints/
 *.ipynb
 
+<<<<<<< HEAD
 # ── Go ────────────────────────────────────────────────────────────────────────
+=======
+# OS
+Thumbs.db
+
+# Backup files
+*.bak
+*_backup_*/
+
+# Environment variables - never commit secrets!
+.env
+*.env
+DevOps_backup_*/
+
+# Go
+>>>>>>> 08b56ca (feat: add flash messages, MD5 to bcrypt migration, add pages data, add some more changes)
 *.exe
 *.exe~
 *.dll
