@@ -48,6 +48,7 @@ func connectDB() {
 
 	fmt.Println("Connection Status: Successfully connected to", getDBPath())
 }
+
 // QueryDB executes a query and returns results as a slice of maps
 func QueryDB(query string, args []interface{}, one bool) (interface{}, error) {
 	rows, err := db.Query(query, args...)
@@ -100,6 +101,7 @@ func QueryDB(query string, args []interface{}, one bool) (interface{}, error) {
 
 	return results, nil
 }
+
 // Fjern db *sql.DB parameter - brug den globale db
 func getUserID(username string) (int, error) {
 	// Prepare the SQL statement to prevent SQL INJECTION vulnerabilities.

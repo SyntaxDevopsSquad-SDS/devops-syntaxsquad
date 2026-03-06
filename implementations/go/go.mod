@@ -1,6 +1,6 @@
 module github.com/SyntaxDevopsSquad-SDS/devops-syntaxsquad
 
-go 1.25.0
+go 1.24
 
 require (
 	github.com/gorilla/sessions v1.4.0
