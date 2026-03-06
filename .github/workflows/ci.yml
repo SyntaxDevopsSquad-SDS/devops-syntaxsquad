@@ -54,7 +54,7 @@ jobs:
 
       # Build all Go packages in backend directory
       - name: Build Go application
-        run: go build -v ./backend/...
+        run: go build -v -o whoknows-server ./backend/...
 
       # Run tests in backend directory with race detection
       - name: Run Go tests
