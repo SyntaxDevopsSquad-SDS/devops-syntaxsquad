@@ -1,30 +1,30 @@
 package main
 
 import (
-    "fmt"
-    "log"
-    "net/http"
+	"fmt"
+	"log"
+	"net/http"
 )
 
 func main() {
-    // 1. Forbind til databasen
-    connectDB()
+	// 1. Forbind til databasen
+	connectDB()
 
-    // 2. Server static filer (CSS, billeder)
-    http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("../static"))))
+	// 2. Server static filer (CSS, billeder)
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("../static"))))
 
-    // 3. Page routes
-    http.HandleFunc("/", WithUser(searchHandler))
-    http.HandleFunc("/about", WithUser(aboutHandler))
-    http.HandleFunc("/login", WithUser(loginHandler))
-    http.HandleFunc("/register", WithUser(registerHandler))
+	// 3. Page routes
+	http.HandleFunc("/", WithUser(searchHandler))
+	http.HandleFunc("/about", WithUser(aboutHandler))
+	http.HandleFunc("/login", WithUser(loginHandler))
+	http.HandleFunc("/register", WithUser(registerHandler))
 
-    // 4. API routes
-    http.HandleFunc("/api/login", WithUser(apiLoginHandler))
-    http.HandleFunc("/api/logout", WithUser(logoutHandler))
-    http.HandleFunc("/api/register", WithUser(apiRegisterHandler))
+	// 4. API routes
+	http.HandleFunc("/api/login", WithUser(apiLoginHandler))
+	http.HandleFunc("/api/logout", WithUser(logoutHandler))
+	http.HandleFunc("/api/register", WithUser(apiRegisterHandler))
 
-    // 5. Start serveren
-    fmt.Println("Server starter på port 8080...")
-    log.Fatal(http.ListenAndServe(":8080", nil))
+	// 5. Start serveren
+	fmt.Println("Server starter på port 8080...")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
