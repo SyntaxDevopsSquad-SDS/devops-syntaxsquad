@@ -21,7 +21,7 @@ jobs:
           cache: false
       
       - name: Install dependencies
-        run: go mod download -x
+        run: go mod download all
       
       - name: Verify dependencies
         run: go mod verify
