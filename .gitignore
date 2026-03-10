@@ -1,44 +1,117 @@
-# Python
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+
+# Distribution / packaging
+dist/
+build/
+*.egg
+*.egg-info/
+.eggs/
+MANIFEST
+pip-wheel-metadata/
+*.whl
+
+# Virtual environments
 venv/
+.venv/
 env/
 ENV/
-*.egg-info/
+.env/
+.ENV/
+__pypackages__/
+
+# Testing & coverage
 .pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+*.cover
+*.py,cover
+.hypothesis/
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
+# Type checkers & linters
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+.ruff_cache/
 
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
 
-# OS
-Thumbs.db
-
-# Backup files
-*.bak
-*_backup_*/
-DevOps_backup_*/
-
-# Go
+# ── Go ────────────────────────────────────────────────────────────────────────
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+
+# Test & coverage
 *.test
 *.out
+coverage.html
+coverage.txt
+
+# Build output
+bin/
+dist/
+
+# Dependency vendor directory (uncomment if not vendoring)
 /vendor/
 
-# Logs
+# Go workspace
+go.work
+go.work.sum
+
+# ── Database ──────────────────────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Environment / secrets ─────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+!.env.template
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
 *.log
+logs/
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*.swn
+.project
+.classpath
+.settings/
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# ── Backup files ──────────────────────────────────────────────────────────────
+*.bak
+*.orig
+*_backup_*/
+DevOps_backup_*/
