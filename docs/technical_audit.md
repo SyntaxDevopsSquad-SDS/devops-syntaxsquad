@@ -22,7 +22,7 @@ The legacy application is built on an **End-of-Life (EOL)** runtime (Python 2.7)
 
 ## Structural & Logic Issues (Medium Priority)
 
-### ### 1. Missing "Digital Signature" on Forms (CSRF)
+### 1. Missing "Digital Signature" on Forms (CSRF)
 **The Problem:** The website doesn't verify if a request (like "change my password") actually came from the user clicking a button on *our* site.
 
 **The "Fake Request" Risk:** A hacker could send you a link to a "funny cat video" site. While you're watching, that site sends a hidden command to our app: *"Delete my account."* Because you are already logged in, the legacy Python app just sees your "logged-in" cookie and says, *"Okay, account deleted!"*
@@ -35,17 +35,17 @@ In the Go version, we will implement **CSRF Middleware**.
 - **Verification:** When the user submits the form, the Go server checks if that exact token is present.
 - **Rejection:** Since a hacker's site can't "guess" this one-time token, their fake requests will be automatically rejected.
 
-### ### 2. Outdated Language (Python 2)
+### 2. Outdated Language (Python 2)
 The original code uses a version of Python that stopped getting security updates in 2020. It is like running an old operating system—it is full of holes that will never be patched.
 
 
 ## Code Quality & Style (Low Priority)
 
-### ### 1. The "Everything" File
+### 1. The "Everything" File
 All the logic—database, security, and website routing—is crammed into one single file (`app.py`). 
 - **The fix:** In our Go version, we split the code into organized folders (Packages) like `/internal/auth` and `/internal/database` so it’s easier to maintain and test.
 
-### ### 2. Frontend Layout
+### 2. Frontend Layout
 We are keeping the original **HTML IDs and Tags** (as required by the exam), but we are adding modern **Tailwind CSS** classes to the tags to make the site look modern without breaking the legacy structure.
 
 
