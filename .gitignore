@@ -26,102 +26,20 @@ __pypackages__/
 
 # Testing & coverage
 .pytest_cache/
-.tox/
-.nox/
-.coverage
-.coverage.*
-coverage.xml
-htmlcov/
-*.cover
-*.py,cover
-.hypothesis/
 
-# Type checkers & linters
-.mypy_cache/
-.dmypy.json
-dmypy.json
-.pyre/
-.pytype/
-.ruff_cache/
-
-# Jupyter
-.ipynb_checkpoints/
-*.ipynb
-
-<<<<<<< HEAD
-# ── Go ────────────────────────────────────────────────────────────────────────
-=======
-# OS
-Thumbs.db
-
-# Backup files
-*.bak
-*_backup_*/
-
-# Environment variables - never commit secrets!
-.env
-*.env
-DevOps_backup_*/
-
-# Go
->>>>>>> 08b56ca (feat: add flash messages, MD5 to bcrypt migration, add pages data, add some more changes)
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# Test & coverage
-*.test
-*.out
-coverage.html
-coverage.txt
-
-# Build output
-bin/
-dist/
-
-# Dependency vendor directory (uncomment if not vendoring)
-/vendor/
-
-# Go workspace
-go.work
-go.work.sum
-
-# ── Database ──────────────────────────────────────────────────────────────────
+# Database
 *.db
 *.sqlite
 *.sqlite3
 
-# ── Environment / secrets ─────────────────────────────────────────────────────
-.env
-.env.*
-!.env.example
-!.env.template
-
-# ── Logs ──────────────────────────────────────────────────────────────────────
-*.log
-logs/
-
-# ── IDE ───────────────────────────────────────────────────────────────────────
+# IDE
 .idea/
-*.iml
-*.ipr
-*.iws
 .vscode/
 *.swp
 *.swo
-*.swn
-.project
-.classpath
-.settings/
-
-# ── OS ────────────────────────────────────────────────────────────────────────
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
+
+# OS
 Thumbs.db
 ehthumbs.db
 desktop.ini
@@ -130,4 +48,21 @@ desktop.ini
 *.bak
 *.orig
 *_backup_*/
+
+# Environment variables - never commit secrets!
+.env
+*.env
 DevOps_backup_*/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/vendor/
+
+# Logs
+*.log
