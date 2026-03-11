@@ -11,6 +11,12 @@ import (
 	"github.com/gorilla/sessions"
 )
 
+/*
+################################################################################
+# Session Management and Utility Functions
+################################################################################
+*/
+
 // getSecretKey reads the secret key from SECRET_KEY env variable. Exits if not set.
 func getSecretKey() []byte {
 	key := os.Getenv("SECRET_KEY")
@@ -77,6 +83,12 @@ func getFlash(w http.ResponseWriter, r *http.Request) string {
 	session.Save(r, w)
 	return flash
 }
+
+/*
+################################################################################
+# HTML Page Handlers
+################################################################################
+*/
 
 func parseTemplates(files ...string) (*template.Template, error) {
 	paths := make([]string, len(files))

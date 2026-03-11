@@ -1,13 +1,30 @@
-# Python
+# ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+
+# Distribution / packaging
+dist/
+build/
+*.egg
+*.egg-info/
+.eggs/
+MANIFEST
+pip-wheel-metadata/
+*.whl
+
+# Virtual environments
 venv/
+.venv/
 env/
 ENV/
-*.egg-info/
+.env/
+.ENV/
+__pypackages__/
+
+# Testing & coverage
 .pytest_cache/
 
 # Database
@@ -24,9 +41,12 @@ ENV/
 
 # OS
 Thumbs.db
+ehthumbs.db
+desktop.ini
 
-# Backup files
+# ── Backup files ──────────────────────────────────────────────────────────────
 *.bak
+*.orig
 *_backup_*/
 
 # Environment variables - never commit secrets!
