@@ -1,0 +1,197 @@
+openapi: 3.0.3
+info:
+  title: WhoKnows API
+  description: REST API for the WhoKnows search application
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: search
+    description: Search operations
+  - name: auth
+    description: Authentication operations
+
+paths:
+  /api/search:
+    get:
+      tags: [search]
+      summary: Search pages
+      description: Search for pages matching a query string, optionally filtered by language.
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Search query string
+          schema:
+            type: string
+            example: algorithm
+        - name: language
+          in: query
+          required: false
+          description: Language filter (defaults to "en")
+          schema:
+            type: string
+            enum: [en, da]
+            default: en
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  search_results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Page"
+              example:
+                search_results:
+                  - title: Algorithm
+                    content: An algorithm is a step-by-step procedure...
+                    language: en
+                    url: http://en.wikipedia.org/wiki/Algorithm
+        "500":
+          description: Database error
+
+  /api/login:
+    post:
+      tags: [auth]
+      summary: Log in
+      description: Authenticates a user and sets a session cookie.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: admin
+                password:
+                  type: string
+                  format: password
+                  example: mypassword
+      responses:
+        "302":
+          description: Redirect to / on success, or renders login page with error on failure
+          headers:
+            Location:
+              schema:
+                type: string
+                example: /
+            Set-Cookie:
+              description: Session cookie
+              schema:
+                type: string
+        "200":
+          description: Login page re-rendered with error message (invalid credentials)
+
+  /api/register:
+    post:
+      tags: [auth]
+      summary: Register a new user
+      description: Creates a new user account. Password is stored as a bcrypt hash.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [username, email, password, password2]
+              properties:
+                username:
+                  type: string
+                  example: johndoe
+                email:
+                  type: string
+                  format: email
+                  example: john@example.com
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: securepass123
+                password2:
+                  type: string
+                  format: password
+                  description: Must match password
+                  example: securepass123
+      responses:
+        "302":
+          description: Redirect to /login on success
+          headers:
+            Location:
+              schema:
+                type: string
+                example: /login
+        "200":
+          description: Register page re-rendered with error message
+          content:
+            text/html:
+              schema:
+                type: string
+              examples:
+                username_missing:
+                  summary: Missing username
+                  value: "You have to enter a username"
+                invalid_email:
+                  summary: Invalid email
+                  value: "You have to enter a valid email address"
+                password_too_short:
+                  summary: Password too short
+                  value: "Password must be at least 8 characters"
+                passwords_mismatch:
+                  summary: Passwords do not match
+                  value: "The two passwords do not match"
+                username_taken:
+                  summary: Username already taken
+                  value: "The username is already taken"
+        "500":
+          description: Internal server error
+
+  /api/logout:
+    get:
+      tags: [auth]
+      summary: Log out
+      description: Clears the session and redirects to /.
+      responses:
+        "302":
+          description: Redirect to /
+          headers:
+            Location:
+              schema:
+                type: string
+                example: /
+
+components:
+  schemas:
+    Page:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Algorithm
+        content:
+          type: string
+          example: An algorithm is a step-by-step procedure...
+        language:
+          type: string
+          enum: [en, da]
+          example: en
+        url:
+          type: string
+          format: uri
+          example: http://en.wikipedia.org/wiki/Algorithm
+
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session
+      description: Session cookie set by /api/login
