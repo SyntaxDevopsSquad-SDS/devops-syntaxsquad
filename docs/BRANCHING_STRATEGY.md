@@ -1,4 +1,4 @@
-# Branching Strategy — WhoKnows
+# Branching Strategy - WhoKnows
 
 **Team:** SyntaxDevOpsSquad-SDS  
 **Project:** Legacy Python (2009) → Go migration  
@@ -16,7 +16,7 @@ Our variant differs from pure GitHub Flow on one important point: **before openi
 
 ## Branch Structure
 
-We have one long-lived branch — `main`. All other branches are short-lived with fixed prefixes:
+We have one long-lived branch - `main`. All other branches are short-lived with fixed prefixes:
 
 | Prefix      | Purpose            | Example                   |
 | ----------- | ------------------ | ------------------------- |
@@ -31,7 +31,7 @@ Branch names use lowercase and hyphens (kebab-case), consistent with our Convent
 
 ## Enforcement
 
-The strategy is not just a social agreement — it is technically enforced at two levels:
+The strategy is not just a social agreement - it is technically enforced at two levels:
 
 **GitHub Ruleset on `main`**
 
@@ -52,7 +52,7 @@ The combination of branch protection rules and the CI pipeline makes it structur
 
 ---
 
-## Workflow — Step by Step
+## Workflow - Step by Step
 
 ```bash
 # 1. Create branch from updated main
