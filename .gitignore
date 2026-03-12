@@ -66,3 +66,4 @@ DevOps_backup_*/
 
 # Logs
 *.log
+*:Zone.Identifier
