@@ -2,11 +2,23 @@ package main
 
 import (
 	"crypto/md5"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"regexp"
 
 	"golang.org/x/crypto/bcrypt"
 )
+
+// generateCSRFToken returns a cryptographically secure random 32-byte hex token.
+func generateCSRFToken() (string, error) {
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
+}
 
 // hashPassword takes a plaintext password and returns a bcrypt hash.
 func hashPassword(password string) (string, error) {

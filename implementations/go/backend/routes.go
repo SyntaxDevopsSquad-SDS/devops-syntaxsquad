@@ -31,9 +31,10 @@ var store *sessions.CookieStore
 
 // BaseData contains data shared across all pages
 type BaseData struct {
-	User  string
-	Flash string
-	Error string
+	User      string
+	Flash     string
+	Error     string
+	CSRFToken string
 }
 
 type SearchPageData struct {
@@ -82,6 +83,34 @@ func getFlash(w http.ResponseWriter, r *http.Request) string {
 	delete(session.Values, "flash")
 	session.Save(r, w)
 	return flash
+}
+
+// generateAndStoreCSRFToken creates a new one-time CSRF token and stores it in the session.
+func generateAndStoreCSRFToken(w http.ResponseWriter, r *http.Request) string {
+	token, err := generateCSRFToken()
+	if err != nil {
+		return ""
+	}
+	session, _ := store.Get(r, "session")
+	session.Values["csrf_token"] = token
+	session.Save(r, w)
+	return token
+}
+
+// validateCSRFToken checks the submitted token against the session-stored token (one-time use).
+func validateCSRFToken(w http.ResponseWriter, r *http.Request) bool {
+	session, err := store.Get(r, "session")
+	if err != nil {
+		return false
+	}
+	storedToken, ok := session.Values["csrf_token"].(string)
+	if !ok || storedToken == "" {
+		return false
+	}
+	delete(session.Values, "csrf_token")
+	session.Save(r, w)
+	submittedToken := r.FormValue("csrf_token")
+	return submittedToken != "" && submittedToken == storedToken
 }
 
 /*
@@ -156,12 +185,13 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
+	token := generateAndStoreCSRFToken(w, r)
 	tmpl, err := parseTemplates("layout.html", "login.html")
 	if err != nil {
 		http.Error(w, "Template error", http.StatusInternalServerError)
 		return
 	}
-	tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r), Flash: getFlash(w, r)})
+	tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r), Flash: getFlash(w, r), CSRFToken: token})
 }
 
 func registerHandler(w http.ResponseWriter, r *http.Request) {
@@ -169,12 +199,13 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
+	token := generateAndStoreCSRFToken(w, r)
 	tmpl, err := parseTemplates("layout.html", "register.html")
 	if err != nil {
 		http.Error(w, "Template error", http.StatusInternalServerError)
 		return
 	}
-	tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r)})
+	tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r), CSRFToken: token})
 }
 
 /*
@@ -226,6 +257,11 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !validateCSRFToken(w, r) {
+		http.Error(w, "Invalid or missing CSRF token", http.StatusForbidden)
+		return
+	}
+
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 
@@ -263,6 +299,11 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/register", http.StatusFound)
+		return
+	}
+
+	if !validateCSRFToken(w, r) {
+		http.Error(w, "Invalid or missing CSRF token", http.StatusForbidden)
 		return
 	}
 
