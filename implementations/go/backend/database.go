@@ -3,9 +3,9 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"os"
 	"log"
 	_ "modernc.org/sqlite"
+	"os"
 )
 
 // dbPath reads the database path from the DB_PATH environment variable,
@@ -56,9 +56,9 @@ func QueryDB(query string, args []interface{}, one bool) (interface{}, error) {
 		return nil, fmt.Errorf("query execution failed: %w", err)
 	}
 	defer func() {
-    if err := rows.Close(); err != nil {
-        log.Printf("error closing rows: %v", err)
-    }
+		if err := rows.Close(); err != nil {
+			log.Printf("error closing rows: %v", err)
+		}
 	}()
 
 	columns, err := rows.Columns()
