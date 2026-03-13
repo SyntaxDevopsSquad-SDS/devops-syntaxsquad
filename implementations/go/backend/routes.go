@@ -3,12 +3,12 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/sessions"
 	"html/template"
+	"log"
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/gorilla/sessions"
 )
 
 /*
@@ -67,7 +67,11 @@ func getSessionUser(r *http.Request) string {
 func setFlash(w http.ResponseWriter, r *http.Request, message string) {
 	session, _ := store.Get(r, "session")
 	session.Values["flash"] = message
-	session.Save(r, w)
+	if err := session.Save(r, w); err != nil {
+		log.Printf("error saving session: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 }
 
 // getFlash reads and clears the flash message from the session.
@@ -81,7 +85,11 @@ func getFlash(w http.ResponseWriter, r *http.Request) string {
 		return ""
 	}
 	delete(session.Values, "flash")
-	session.Save(r, w)
+	if err := session.Save(r, w); err != nil {
+		log.Printf("error saving session: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return ""
+	}
 	return flash
 }
 
@@ -93,7 +101,11 @@ func generateAndStoreCSRFToken(w http.ResponseWriter, r *http.Request) string {
 	}
 	session, _ := store.Get(r, "session")
 	session.Values["csrf_token"] = token
-	session.Save(r, w)
+	if err := session.Save(r, w); err != nil {
+		log.Printf("error saving session: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return ""
+	}
 	return token
 }
 
@@ -108,7 +120,11 @@ func validateCSRFToken(w http.ResponseWriter, r *http.Request) bool {
 		return false
 	}
 	delete(session.Values, "csrf_token")
-	session.Save(r, w)
+	if err := session.Save(r, w); err != nil {
+		log.Printf("error saving session: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return false
+	}
 	submittedToken := r.FormValue("csrf_token")
 	return submittedToken != "" && submittedToken == storedToken
 }
@@ -146,7 +162,11 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Database error", http.StatusInternalServerError)
 			return
 		}
-		defer rows.Close()
+		defer func() {
+			if err := rows.Close(); err != nil {
+				log.Printf("error closing rows: %v", err)
+			}
+		}()
 
 		for rows.Next() {
 			var page Page
@@ -164,11 +184,14 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl.ExecuteTemplate(w, "layout", SearchPageData{
+	if err := tmpl.ExecuteTemplate(w, "layout", SearchPageData{
 		BaseData:      BaseData{User: getSessionUser(r), Flash: getFlash(w, r)},
 		SearchResults: searchResults,
 		Query:         query,
-	})
+	}); err != nil {
+		log.Printf("error executing template: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 func aboutHandler(w http.ResponseWriter, r *http.Request) {
@@ -177,7 +200,10 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Template error", http.StatusInternalServerError)
 		return
 	}
-	tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r)})
+	if err := tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r)}); err != nil {
+		log.Printf("error executing template: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -191,7 +217,14 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Template error", http.StatusInternalServerError)
 		return
 	}
-	tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r), Flash: getFlash(w, r), CSRFToken: token})
+	if err := tmpl.ExecuteTemplate(w, "layout", BaseData{
+		User:      getSessionUser(r),
+		Flash:     getFlash(w, r),
+		CSRFToken: token,
+	}); err != nil {
+		log.Printf("error executing template: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 func registerHandler(w http.ResponseWriter, r *http.Request) {
@@ -205,7 +238,13 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Template error", http.StatusInternalServerError)
 		return
 	}
-	tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r), CSRFToken: token})
+	if err := tmpl.ExecuteTemplate(w, "layout", BaseData{
+		User:      getSessionUser(r),
+		CSRFToken: token,
+	}); err != nil {
+		log.Printf("error executing template: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 /*
@@ -233,7 +272,11 @@ func apiSearchHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Database error", http.StatusInternalServerError)
 			return
 		}
-		defer rows.Close()
+		defer func() {
+			if err := rows.Close(); err != nil {
+				log.Printf("error closing rows: %v", err)
+			}
+		}()
 
 		for rows.Next() {
 			var page Page
@@ -246,9 +289,12 @@ func apiSearchHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"search_results": searchResults,
-	})
+	}); err != nil {
+		log.Printf("error encoding JSON: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -269,7 +315,9 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 	err := db.QueryRow("SELECT password FROM users WHERE username = ?", username).Scan(&storedHash)
 	if err != nil {
 		tmpl, _ := parseTemplates("layout.html", "login.html")
-		tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Invalid username or password"})
+		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Invalid username or password"}); err != nil {
+			log.Printf("error executing template: %v", err)
+		}
 		return
 	}
 
@@ -279,18 +327,26 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 			// Upgrade to bcrypt
 			newHash, err := hashPassword(password)
 			if err == nil {
-				db.Exec("UPDATE users SET password = ? WHERE username = ?", newHash, username)
+				if _, err := db.Exec("UPDATE users SET password = ? WHERE username = ?", newHash, username); err != nil {
+					log.Printf("error updating password: %v", err)
+				}
 			}
 		} else {
 			tmpl, _ := parseTemplates("layout.html", "login.html")
-			tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Invalid username or password"})
+			if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Invalid username or password"}); err != nil {
+				log.Printf("error executing template: %v", err)
+			}
 			return
 		}
 	}
 
 	session, _ := store.Get(r, "session")
 	session.Values["user"] = username
-	session.Save(r, w)
+	if err := session.Save(r, w); err != nil {
+		log.Printf("error saving session: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 
 	setFlash(w, r, "You were logged in")
 	http.Redirect(w, r, "/", http.StatusFound)
@@ -314,33 +370,47 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	if username == "" {
 		tmpl, _ := parseTemplates("layout.html", "register.html")
-		tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "You have to enter a username"})
+		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "You have to enter a username"}); err != nil {
+			log.Printf("error executing template: %v", err)
+		}
 		return
 	}
 
 	if email == "" || !strings.Contains(email, "@") {
 		tmpl, _ := parseTemplates("layout.html", "register.html")
-		tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "You have to enter a valid email address"})
+		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "You have to enter a valid email address"}); err != nil {
+			log.Printf("error executing template: %v", err)
+		}
 		return
 	}
 
 	if len(password) < 8 {
 		tmpl, _ := parseTemplates("layout.html", "register.html")
-		tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Password must be at least 8 characters"})
+		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Password must be at least 8 characters"}); err != nil {
+			log.Printf("error executing template: %v", err)
+		}
 		return
 	}
 
 	if password != password2 {
 		tmpl, _ := parseTemplates("layout.html", "register.html")
-		tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "The two passwords do not match"})
+		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "The two passwords do not match"}); err != nil {
+			log.Printf("error executing template: %v", err)
+		}
 		return
 	}
 
 	var exists int
-	db.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", username).Scan(&exists)
+	if err := db.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", username).Scan(&exists); err != nil {
+		log.Printf("error checking username existence: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 	if exists > 0 {
 		tmpl, _ := parseTemplates("layout.html", "register.html")
-		tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "The username is already taken"})
+		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "The username is already taken"}); err != nil {
+			log.Printf("error executing template: %v", err)
+		}
 		return
 	}
 
@@ -356,7 +426,9 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println("Register error:", err)
 		tmpl, _ := parseTemplates("layout.html", "register.html")
-		tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Could not create user"})
+		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Could not create user"}); err != nil {
+			log.Printf("error executing template: %v", err)
+		}
 		return
 	}
 
@@ -367,7 +439,11 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, "session")
 	delete(session.Values, "user")
-	session.Save(r, w)
+	if err := session.Save(r, w); err != nil {
+		log.Printf("error saving session: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 	setFlash(w, r, "You were logged out")
 	http.Redirect(w, r, "/", http.StatusFound)
 }
