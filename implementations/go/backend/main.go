@@ -11,7 +11,9 @@ import (
 
 func main() {
 	// Load .env file if it exists (ignored in production where env vars are set via systemd)
-	godotenv.Load()
+	if err := godotenv.Load(); err != nil {
+    log.Printf("Warning: Could not load .env file: %v", err)
+	}
 
 	// Initialize session store (must happen after godotenv.Load)
 	store = sessions.NewCookieStore(getSecretKey())

@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-
+	"log"
 	_ "modernc.org/sqlite"
 )
 
@@ -55,7 +55,11 @@ func QueryDB(query string, args []interface{}, one bool) (interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("query execution failed: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+    if err := rows.Close(); err != nil {
+        log.Printf("error closing rows: %v", err)
+    }
+	}()
 
 	columns, err := rows.Columns()
 	if err != nil {
@@ -100,21 +104,4 @@ func QueryDB(query string, args []interface{}, one bool) (interface{}, error) {
 	}
 
 	return results, nil
-}
-
-// Fjern db *sql.DB parameter - brug den globale db
-func getUserID(username string) (int, error) {
-	// Prepare the SQL statement to prevent SQL INJECTION vulnerabilities.
-	statement, err := db.Prepare("SELECT id FROM users WHERE username = ?")
-	if err != nil {
-		return 0, fmt.Errorf("failed to prepare statement: %w", err)
-	}
-	defer statement.Close()
-
-	var id int
-	err = statement.QueryRow(username).Scan(&id)
-	if err != nil {
-		return 0, fmt.Errorf("failed to query user ID: %w", err)
-	}
-	return id, nil
 }

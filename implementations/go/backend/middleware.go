@@ -16,11 +16,3 @@ func WithUser(next http.HandlerFunc) http.HandlerFunc {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	}
 }
-
-func getUserFromContext(r *http.Request) string {
-	user, ok := r.Context().Value(userContextKey).(string)
-	if !ok {
-		return ""
-	}
-	return user
-}
