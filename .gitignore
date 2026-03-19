@@ -67,3 +67,4 @@ DevOps_backup_*/
 # Logs
 *.log
 *:Zone.Identifier
+implementations/go/whoknows-server
