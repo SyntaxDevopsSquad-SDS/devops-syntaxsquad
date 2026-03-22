@@ -3,6 +3,8 @@ name: CI Pipeline
 on:
   pull_request:
     branches: [main]
+permissions:
+  contents: read
 
 jobs:
   # Go Backend CI - Production Implementation
