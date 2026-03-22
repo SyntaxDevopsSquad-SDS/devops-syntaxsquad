@@ -40,7 +40,11 @@ func setupTestDB(t *testing.T) {
 
 func TestQueryDB(t *testing.T) {
 	setupTestDB(t)
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Logf("error closing test database: %v", err)
+		}
+	}()
 
 	t.Run("Query all users", func(t *testing.T) {
 		results, err := QueryDB("SELECT * FROM users", []interface{}{}, false)
