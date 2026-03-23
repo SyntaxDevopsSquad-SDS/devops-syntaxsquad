@@ -5,8 +5,6 @@ title: "[BUG][W_INSERT_WEEK] Short description of the problem"
 labels: ["bug", "critical", "backend"]
 ---
 
-<!-- Those --- mark hidden settings that are configuration for GitHub -->
-
 ## Description
 What is the bug? Provide a clear and concise description of the problem.
 

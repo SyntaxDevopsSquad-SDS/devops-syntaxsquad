@@ -5,8 +5,6 @@ title: "[W_INSERT_WEEK] Task Name"
 labels: ["backend"]
 ---
 
-<!-- Those --- mark hidden settings that are configuration for GitHub -->
-
 ## Description
 Provide a concise description of the work.
 Does this relate to the Python-to-Go migration?
