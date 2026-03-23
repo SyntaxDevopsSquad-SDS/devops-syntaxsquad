@@ -101,6 +101,41 @@ login_ghcr_if_configured() {
     fi
 }
 
+is_port_8080_in_use() {
+    sudo ss -ltn | grep -q ':8080 '
+}
+
+ensure_port_8080_available() {
+    if ! is_port_8080_in_use; then
+        return
+    fi
+
+    echo "Port 8080 is in use. Attempting to stop Docker containers publishing 8080..."
+    CONTAINERS="$(sudo docker ps --filter publish=8080 --format '{{.ID}}')"
+    if [ -n "$CONTAINERS" ]; then
+        sudo docker stop $CONTAINERS
+        sudo docker rm $CONTAINERS || true
+    fi
+
+    if is_port_8080_in_use; then
+        echo "Port 8080 still busy. Attempting to stop non-Docker listener processes..."
+        PIDS="$(sudo ss -ltnp | grep ':8080 ' | grep -o 'pid=[0-9]\+' | cut -d= -f2 | sort -u)"
+        if [ -n "$PIDS" ]; then
+            sudo kill $PIDS || true
+            sleep 2
+            if is_port_8080_in_use; then
+                sudo kill -9 $PIDS || true
+                sleep 1
+            fi
+        fi
+    fi
+
+    if is_port_8080_in_use; then
+        echo "Port 8080 is still in use after attempts to free it. Aborting migration."
+        exit 1
+    fi
+}
+
 ensure_root_env() {
     sudo mkdir -p "$APP_DIR"
 
@@ -148,7 +183,7 @@ if sudo test -f "$PROD_COMPOSE_FILE"; then
     sudo cp -f "$PROD_COMPOSE_FILE" "$COMPOSE_FILE"
 fi
 
-if [ ! -f "$COMPOSE_FILE" ]; then
+if ! sudo test -f "$COMPOSE_FILE"; then
     echo "Missing compose file: $COMPOSE_FILE"
     exit 1
 fi
@@ -174,6 +209,8 @@ if sudo systemctl list-unit-files | grep -q "^${SERVICE_NAME}\.service"; then
 else
     echo "Systemd service ${SERVICE_NAME}.service not found; skipping stop step"
 fi
+
+ensure_port_8080_available
 
 echo "Starting Docker Compose service..."
 sudo IMAGE_NAME="$IMAGE_NAME" IMAGE_TAG="$IMAGE_TAG" docker compose up -d --remove-orphans
