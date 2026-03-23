@@ -129,6 +129,28 @@ func validateCSRFToken(w http.ResponseWriter, r *http.Request) bool {
 	return submittedToken != "" && submittedToken == storedToken
 }
 
+// isCSRFRelaxed returns true if CSRF checks are explicitly relaxed via env var.
+// Intended for controlled simulation/test environments only.
+func isCSRFRelaxed() bool {
+	v := strings.TrimSpace(strings.ToLower(os.Getenv("CSRF_RELAXED")))
+	return v == "1" || v == "true" || v == "yes" || v == "on"
+}
+
+// requireCSRF validates CSRF token, or allows a controlled bypass when CSRF_RELAXED is enabled.
+func requireCSRF(w http.ResponseWriter, r *http.Request, endpoint string) bool {
+	if validateCSRFToken(w, r) {
+		return true
+	}
+
+	if isCSRFRelaxed() {
+		log.Printf("warning: CSRF check bypassed for %s from %s (CSRF_RELAXED enabled)", endpoint, r.RemoteAddr)
+		return true
+	}
+
+	http.Error(w, "Invalid or missing CSRF token", http.StatusForbidden)
+	return false
+}
+
 /*
 ################################################################################
 # HTML Page Handlers
@@ -303,8 +325,7 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !validateCSRFToken(w, r) {
-		http.Error(w, "Invalid or missing CSRF token", http.StatusForbidden)
+	if !requireCSRF(w, r, "/api/login") {
 		return
 	}
 
@@ -358,8 +379,7 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !validateCSRFToken(w, r) {
-		http.Error(w, "Invalid or missing CSRF token", http.StatusForbidden)
+	if !requireCSRF(w, r, "/api/register") {
 		return
 	}
 

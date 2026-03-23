@@ -135,6 +135,19 @@ go run main.go
 6. **Access the application:**
 Open your browser and navigate to `http://localhost:8080`
 
+### CSRF Simulation Mode
+
+The Go backend protects login/register with CSRF tokens by default. For controlled
+black-box simulations that call API endpoints directly, you can relax this check:
+
+```env
+CSRF_RELAXED=true
+```
+
+Guidelines:
+- Use `CSRF_RELAXED=false` in normal/prod operation.
+- Enable `CSRF_RELAXED=true` only when simulation tooling cannot handle form CSRF flow.
+
 ##  Development Workflow
 
 ### System Architecture
