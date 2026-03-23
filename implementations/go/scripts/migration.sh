@@ -112,7 +112,7 @@ ensure_root_env() {
         return
     fi
 
-    if ! grep -q '^SECRET_KEY=' "$ENV_FILE"; then
+    if ! sudo grep -q '^SECRET_KEY=' "$ENV_FILE"; then
         echo "SECRET_KEY missing in $ENV_FILE. Appending generated SECRET_KEY"
         SECRET_VALUE="$(generate_secret_key)"
         printf "SECRET_KEY=%s\n" "$SECRET_VALUE" | sudo tee -a "$ENV_FILE" >/dev/null
@@ -139,13 +139,13 @@ if [ ! -d "$APP_DIR" ]; then
     exit 1
 fi
 
-if ! grep -q '^SECRET_KEY=' "$ENV_FILE"; then
+if ! sudo grep -q '^SECRET_KEY=' "$ENV_FILE"; then
     echo "Missing SECRET_KEY in $ENV_FILE"
     exit 1
 fi
 
-if [ -f "$PROD_COMPOSE_FILE" ]; then
-    cp -f "$PROD_COMPOSE_FILE" "$COMPOSE_FILE"
+if sudo test -f "$PROD_COMPOSE_FILE"; then
+    sudo cp -f "$PROD_COMPOSE_FILE" "$COMPOSE_FILE"
 fi
 
 if [ ! -f "$COMPOSE_FILE" ]; then
@@ -156,10 +156,10 @@ fi
 echo "=== Preparing migration to Docker Compose ==="
 cd "$APP_DIR"
 
-if [ -f "$DB_FILE" ]; then
+if sudo test -f "$DB_FILE"; then
     BACKUP_FILE="$BACKEND_DIR/whoknows.db.bak.$(date +%F-%H%M%S)"
     echo "Creating DB backup: $BACKUP_FILE"
-    cp "$DB_FILE" "$BACKUP_FILE"
+    sudo cp "$DB_FILE" "$BACKUP_FILE"
 else
     echo "No existing DB file found at $DB_FILE (will initialize if needed)"
 fi
