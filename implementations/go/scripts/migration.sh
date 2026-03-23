@@ -34,6 +34,14 @@ require_cmd() {
     fi
 }
 
+generate_secret_key() {
+    if command -v openssl >/dev/null 2>&1; then
+        openssl rand -hex 32
+    else
+        head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n'
+    fi
+}
+
 ensure_docker_compose() {
     if sudo docker compose version >/dev/null 2>&1; then
         return
@@ -93,12 +101,29 @@ login_ghcr_if_configured() {
     fi
 }
 
+ensure_root_env() {
+    mkdir -p "$APP_DIR"
+
+    if [ ! -f "$ENV_FILE" ]; then
+        echo "Creating $ENV_FILE with generated SECRET_KEY"
+        umask 077
+        printf "SECRET_KEY=%s\n" "$(generate_secret_key)" > "$ENV_FILE"
+        return
+    fi
+
+    if ! grep -q '^SECRET_KEY=' "$ENV_FILE"; then
+        echo "SECRET_KEY missing in $ENV_FILE. Appending generated SECRET_KEY"
+        printf "SECRET_KEY=%s\n" "$(generate_secret_key)" >> "$ENV_FILE"
+    fi
+}
+
 require_cmd sudo
 require_cmd date
 require_cmd cp
 ensure_docker
 ensure_docker_compose
 login_ghcr_if_configured
+ensure_root_env
 
 if [ -z "$IMAGE_NAME" ]; then
     echo "Usage: bash implementations/go/scripts/migration.sh <IMAGE_NAME> [IMAGE_TAG]"
@@ -108,11 +133,6 @@ fi
 
 if [ ! -d "$APP_DIR" ]; then
     echo "App directory not found: $APP_DIR"
-    exit 1
-fi
-
-if [ ! -f "$ENV_FILE" ]; then
-    echo "Missing $ENV_FILE (must contain SECRET_KEY=...)"
     exit 1
 fi
 
