@@ -4,6 +4,7 @@
     <div class="error"><strong>Error:</strong> {{ .Error }}</div>
 {{ end }}
 <form action="/api/register" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
     <dl>
         <dt>Username:</dt>
         <dd><input type="text" name="username" size="30"></dd>
