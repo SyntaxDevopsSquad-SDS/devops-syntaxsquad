@@ -183,7 +183,7 @@ if sudo test -f "$PROD_COMPOSE_FILE"; then
     sudo cp -f "$PROD_COMPOSE_FILE" "$COMPOSE_FILE"
 fi
 
-if [ ! -f "$COMPOSE_FILE" ]; then
+if ! sudo test -f "$COMPOSE_FILE"; then
     echo "Missing compose file: $COMPOSE_FILE"
     exit 1
 fi
