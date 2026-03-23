@@ -165,7 +165,7 @@ else
 fi
 
 echo "Pulling image before cutover (service stays online)..."
-IMAGE_NAME="$IMAGE_NAME" IMAGE_TAG="$IMAGE_TAG" sudo docker compose pull
+sudo IMAGE_NAME="$IMAGE_NAME" IMAGE_TAG="$IMAGE_TAG" docker compose pull
 
 echo "Stopping old systemd service..."
 if sudo systemctl list-unit-files | grep -q "^${SERVICE_NAME}\.service"; then
@@ -176,7 +176,7 @@ else
 fi
 
 echo "Starting Docker Compose service..."
-IMAGE_NAME="$IMAGE_NAME" IMAGE_TAG="$IMAGE_TAG" sudo docker compose up -d --remove-orphans
+sudo IMAGE_NAME="$IMAGE_NAME" IMAGE_TAG="$IMAGE_TAG" docker compose up -d --remove-orphans
 
 sleep 3
 
