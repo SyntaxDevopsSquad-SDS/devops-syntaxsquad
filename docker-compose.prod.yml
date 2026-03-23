@@ -1,0 +1,12 @@
+services:
+  whoknows:
+    image: ${IMAGE_NAME}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_PATH: /data/whoknows.db
+    ports:
+      - "8080:8080"
+    volumes:
+      - /opt/whoknows/implementations/go/backend:/data
