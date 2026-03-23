@@ -61,7 +61,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: docker-compose.prod.yml,implementations/go/scripts/migration.sh
-          target: /opt/whoknows
+          target: /tmp/whoknows-deploy
           overwrite: true
 
       - name: Deploy with Docker Compose on VM
@@ -73,11 +73,16 @@ jobs:
           script_stop: true
           script: |
             set -e
-            mkdir -p /opt/whoknows
-            cd /opt/whoknows
-            mv -f docker-compose.prod.yml docker-compose.yml
+            sudo mkdir -p /opt/whoknows
+            sudo mkdir -p /opt/whoknows/implementations/go/scripts
 
-            chmod +x /opt/whoknows/implementations/go/scripts/migration.sh
+            sudo cp -f /tmp/whoknows-deploy/docker-compose.prod.yml /opt/whoknows/docker-compose.prod.yml
+            sudo cp -f /tmp/whoknows-deploy/implementations/go/scripts/migration.sh /opt/whoknows/implementations/go/scripts/migration.sh
+
+            cd /opt/whoknows
+            sudo mv -f docker-compose.prod.yml docker-compose.yml
+
+            sudo chmod +x /opt/whoknows/implementations/go/scripts/migration.sh
 
             export GHCR_USER="${{ secrets.GHCR_USER }}"
             export GHCR_PAT="${{ secrets.GHCR_PAT }}"
@@ -86,4 +91,4 @@ jobs:
               "${{ needs.build-and-push.outputs.image_name }}" \
               "${{ github.sha }}"
 
-            docker image prune -f
+            sudo docker image prune -f
