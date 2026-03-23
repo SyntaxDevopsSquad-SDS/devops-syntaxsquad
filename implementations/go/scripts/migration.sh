@@ -102,18 +102,21 @@ login_ghcr_if_configured() {
 }
 
 ensure_root_env() {
-    mkdir -p "$APP_DIR"
+    sudo mkdir -p "$APP_DIR"
 
     if [ ! -f "$ENV_FILE" ]; then
         echo "Creating $ENV_FILE with generated SECRET_KEY"
-        umask 077
-        printf "SECRET_KEY=%s\n" "$(generate_secret_key)" > "$ENV_FILE"
+        SECRET_VALUE="$(generate_secret_key)"
+        printf "SECRET_KEY=%s\n" "$SECRET_VALUE" | sudo tee "$ENV_FILE" >/dev/null
+        sudo chmod 600 "$ENV_FILE"
         return
     fi
 
     if ! grep -q '^SECRET_KEY=' "$ENV_FILE"; then
         echo "SECRET_KEY missing in $ENV_FILE. Appending generated SECRET_KEY"
-        printf "SECRET_KEY=%s\n" "$(generate_secret_key)" >> "$ENV_FILE"
+        SECRET_VALUE="$(generate_secret_key)"
+        printf "SECRET_KEY=%s\n" "$SECRET_VALUE" | sudo tee -a "$ENV_FILE" >/dev/null
+        sudo chmod 600 "$ENV_FILE"
     fi
 }
 
