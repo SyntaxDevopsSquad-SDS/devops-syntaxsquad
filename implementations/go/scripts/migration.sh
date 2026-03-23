@@ -213,7 +213,11 @@ fi
 ensure_port_8080_available
 
 echo "Starting Docker Compose service..."
-sudo IMAGE_NAME="$IMAGE_NAME" IMAGE_TAG="$IMAGE_TAG" docker compose up -d --remove-orphans
+if ! sudo IMAGE_NAME="$IMAGE_NAME" IMAGE_TAG="$IMAGE_TAG" docker compose up -d --remove-orphans; then
+    echo "First compose start failed. Re-checking port 8080 and retrying once..."
+    ensure_port_8080_available
+    sudo IMAGE_NAME="$IMAGE_NAME" IMAGE_TAG="$IMAGE_TAG" docker compose up -d --remove-orphans
+fi
 
 sleep 3
 
