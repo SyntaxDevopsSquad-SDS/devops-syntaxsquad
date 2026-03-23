@@ -32,9 +32,11 @@ cd "$APP_DIR"
 echo "=== Pulling image ==="
 sudo IMAGE_NAME="$IMAGE_NAME" IMAGE_TAG="$IMAGE_TAG" docker compose pull
 
-echo "=== Updating service ==="
-sudo IMAGE_NAME="$IMAGE_NAME" IMAGE_TAG="$IMAGE_TAG" docker compose up -d --remove-orphans
+echo "=== Stopping existing containers ==="
+sudo docker compose down
 
+echo "=== Updating service ==="
+sudo IMAGE_NAME="$IMAGE_NAME" IMAGE_TAG="$IMAGE_TAG" docker compose up -d
 sleep 2
 
 if ! sudo docker compose ps --status running | grep -q "whoknows"; then
