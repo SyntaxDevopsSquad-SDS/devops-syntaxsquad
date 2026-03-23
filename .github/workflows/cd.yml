@@ -61,7 +61,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: docker-compose.prod.yml,implementations/go/scripts/migration.sh
+          source: docker-compose.prod.yml,implementations/go/scripts/deploy_compose.sh
           target: /tmp/whoknows-deploy
           overwrite: true
 
@@ -78,17 +78,17 @@ jobs:
             sudo mkdir -p /opt/whoknows/implementations/go/scripts
 
             sudo cp -f /tmp/whoknows-deploy/docker-compose.prod.yml /opt/whoknows/docker-compose.prod.yml
-            sudo cp -f /tmp/whoknows-deploy/implementations/go/scripts/migration.sh /opt/whoknows/implementations/go/scripts/migration.sh
+            sudo cp -f /tmp/whoknows-deploy/implementations/go/scripts/deploy_compose.sh /opt/whoknows/implementations/go/scripts/deploy_compose.sh
 
             cd /opt/whoknows
             sudo mv -f docker-compose.prod.yml docker-compose.yml
 
-            sudo chmod +x /opt/whoknows/implementations/go/scripts/migration.sh
+            sudo chmod +x /opt/whoknows/implementations/go/scripts/deploy_compose.sh
 
             export GHCR_USER="${{ secrets.GHCR_USER }}"
             export GHCR_PAT="${{ secrets.GHCR_PAT }}"
 
-            bash /opt/whoknows/implementations/go/scripts/migration.sh \
+            bash /opt/whoknows/implementations/go/scripts/deploy_compose.sh \
               "${{ needs.build-and-push.outputs.image_name }}" \
               "${{ github.sha }}"
 
