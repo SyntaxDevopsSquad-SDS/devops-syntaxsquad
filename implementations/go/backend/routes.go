@@ -249,6 +249,12 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// logoutHandler handles /logout (HTML route) and delegates to apiLogoutHandler
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	apiLogoutHandler(w, r)
+}
+
+
 func registerHandler(w http.ResponseWriter, r *http.Request) {
 	if getSessionUser(r) != "" {
 		http.Redirect(w, r, "/", http.StatusFound)
@@ -456,14 +462,16 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login", http.StatusFound)
 }
 
-func logoutHandler(w http.ResponseWriter, r *http.Request) {
+// apiLogoutHandler handles /api/logout (API endpoint)
+func apiLogoutHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, "session")
 	delete(session.Values, "user")
 	if err := session.Save(r, w); err != nil {
-		log.Printf("error saving session: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		 log.Printf("error saving session: %v", err)
+		 http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		 return
 	}
 	setFlash(w, r, "You were logged out")
 	http.Redirect(w, r, "/", http.StatusFound)
 }
+

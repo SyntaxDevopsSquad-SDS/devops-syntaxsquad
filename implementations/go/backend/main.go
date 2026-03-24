@@ -34,12 +34,13 @@ func main() {
 	http.HandleFunc("/", searchHandler)
 	http.HandleFunc("/about", aboutHandler)
 	http.HandleFunc("/login", loginHandler)
+	http.HandleFunc("/logout", logoutHandler)
 	http.HandleFunc("/register", registerHandler)
 
 	// 4. API routes
 	http.HandleFunc("/api/search", apiSearchHandler)
 	http.HandleFunc("/api/login", apiLoginHandler)
-	http.HandleFunc("/api/logout", logoutHandler)
+	http.HandleFunc("/api/logout", apiLogoutHandler)
 	http.HandleFunc("/api/register", apiRegisterHandler)
 
 	// 5. Start serveren
