@@ -254,7 +254,6 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	apiLogoutHandler(w, r)
 }
 
-
 func registerHandler(w http.ResponseWriter, r *http.Request) {
 	if getSessionUser(r) != "" {
 		http.Redirect(w, r, "/", http.StatusFound)
@@ -467,11 +466,10 @@ func apiLogoutHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, "session")
 	delete(session.Values, "user")
 	if err := session.Save(r, w); err != nil {
-		 log.Printf("error saving session: %v", err)
-		 http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		 return
+		log.Printf("error saving session: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 	setFlash(w, r, "You were logged out")
 	http.Redirect(w, r, "/", http.StatusFound)
 }
-
