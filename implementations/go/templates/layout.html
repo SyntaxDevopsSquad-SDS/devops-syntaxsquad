@@ -27,4 +27,21 @@
         <a href="/about">About</a>
     </div>
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const path = window.location.pathname;
+        const loginLink = document.getElementById("nav-login");
+        const registerLink = document.getElementById("nav-register");
+
+        if (loginLink && path === "/login") {
+            loginLink.classList.add("is-active");
+            loginLink.setAttribute("aria-current", "page");
+        }
+
+        if (registerLink && path === "/register") {
+            registerLink.classList.add("is-active");
+            registerLink.setAttribute("aria-current", "page");
+        }
+    });
+</script>
 {{ end }}
