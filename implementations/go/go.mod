@@ -5,7 +5,7 @@ go 1.25.0
 require (
 	github.com/gorilla/sessions v1.4.0
 	github.com/joho/godotenv v1.5.1
-	golang.org/x/crypto v0.48.0
+	golang.org/x/crypto v0.49.0
 	modernc.org/sqlite v1.48.0
 )
 
