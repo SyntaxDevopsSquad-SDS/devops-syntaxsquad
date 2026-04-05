@@ -357,7 +357,7 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 					log.Printf("error updating password: %v", err)
 				}
 			}
-		} else {
+		} else {f
 			tmpl, _ := parseTemplates("layout.html", "login.html")
 			if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Invalid username or password"}); err != nil {
 				log.Printf("error executing template: %v", err)
