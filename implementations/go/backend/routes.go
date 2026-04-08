@@ -177,8 +177,8 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if query != "" {
 		rows, err := db.Query(
-			"SELECT title, content, language, url FROM pages WHERE language = ? AND content LIKE ?",
-			language, "%"+query+"%",
+			"SELECT p.title, p.content, p.language, p.url FROM pages_fts f JOIN pages p ON f.rowid = p.id WHERE f.language = ? AND pages_fts MATCH ?",
+			language, query,
 		)
 		if err != nil {
 			http.Error(w, "Database error", http.StatusInternalServerError)
@@ -292,8 +292,8 @@ func apiSearchHandler(w http.ResponseWriter, r *http.Request) {
 
 	if query != "" {
 		rows, err := db.Query(
-			"SELECT title, content, language, url FROM pages WHERE language = ? AND content LIKE ?",
-			language, "%"+query+"%",
+			"SELECT p.title, p.content, p.language, p.url FROM pages_fts f JOIN pages p ON f.rowid = p.id WHERE f.language = ? AND pages_fts MATCH ?",
+			language, query,
 		)
 		if err != nil {
 			http.Error(w, "Database error", http.StatusInternalServerError)
