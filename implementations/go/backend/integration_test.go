@@ -17,9 +17,15 @@ func setupTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
 
 	// Set test environment
-	os.Setenv("DB_PATH", ":memory:")
-	os.Setenv("SECRET_KEY", "test-secret-key-for-integration-tests")
-	os.Setenv("CSRF_RELAXED", "true")
+	if err := os.Setenv("DB_PATH", ":memory:"); err != nil {
+		t.Fatalf("Failed to set DB_PATH: %v", err)
+	}
+	if err := os.Setenv("SECRET_KEY", "test-secret-key-for-integration-tests"); err != nil {
+		t.Fatalf("Failed to set SECRET_KEY: %v", err)
+	}
+	if err := os.Setenv("CSRF_RELAXED", "true"); err != nil {
+		t.Fatalf("Failed to set CSRF_RELAXED: %v", err)
+	}
 
 	// Initialize session store
 	store = sessions.NewCookieStore(getSecretKey())
@@ -139,7 +145,11 @@ func TestAPIRegister(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to make request: %v", err)
 			}
-			defer resp.Body.Close()
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					t.Logf("Failed to close response body: %v", err)
+				}
+			}()
 
 			// Verify status code
 			if resp.StatusCode != tt.expectedStatus {
@@ -181,7 +191,11 @@ func TestAPILogin(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
-	resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Logf("Failed to close response body: %v", err)
+		}
+	}()
 
 	tests := []struct {
 		name           string
@@ -235,7 +249,11 @@ func TestAPILogin(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to make request: %v", err)
 			}
-			defer resp.Body.Close()
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					t.Logf("Failed to close response body: %v", err)
+				}
+			}()
 
 			// Verify status code
 			if resp.StatusCode != tt.expectedStatus {
@@ -274,7 +292,11 @@ func TestAPISearchAuthentication(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to make request: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Logf("Failed to close response body: %v", err)
+		}
+	}()
 
 	// Should return results (search doesn't require auth in current implementation)
 	if resp.StatusCode != http.StatusOK {
@@ -314,7 +336,9 @@ func TestAPILogout(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to register: %v", err)
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Logf("Failed to close response body: %v", err)
+	}
 
 	// Login
 	loginForm := url.Values{}
@@ -338,7 +362,9 @@ func TestAPILogout(t *testing.T) {
 
 	// Extract session cookie
 	cookies := resp.Cookies()
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Logf("Failed to close response body: %v", err)
+	}
 
 	// Make logout request with session cookie
 	req, err := http.NewRequest("GET", server.URL+"/api/logout", nil)
@@ -354,7 +380,11 @@ func TestAPILogout(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to logout: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Logf("Failed to close response body: %v", err)
+		}
+	}()
 
 	// Should redirect to homepage
 	if resp.StatusCode != http.StatusFound {
@@ -402,7 +432,9 @@ func TestIntegrationFlow(t *testing.T) {
 	if resp.StatusCode != http.StatusFound {
 		t.Fatalf("Expected redirect after registration, got %d", resp.StatusCode)
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Logf("Failed to close response body: %v", err)
+	}
 
 	// Step 2: Login
 	t.Log("Step 2: Logging in...")
@@ -424,7 +456,9 @@ func TestIntegrationFlow(t *testing.T) {
 
 	// Save session cookie
 	cookies := resp.Cookies()
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Logf("Failed to close response body: %v", err)
+	}
 
 	// Step 3: Make authenticated search
 	t.Log("Step 3: Making search request...")
@@ -440,7 +474,9 @@ func TestIntegrationFlow(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Expected 200 for search, got %d", resp.StatusCode)
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Logf("Failed to close response body: %v", err)
+	}
 
 	// Step 4: Logout
 	t.Log("Step 4: Logging out...")
@@ -456,7 +492,9 @@ func TestIntegrationFlow(t *testing.T) {
 	if resp.StatusCode != http.StatusFound {
 		t.Fatalf("Expected redirect after logout, got %d", resp.StatusCode)
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		t.Logf("Failed to close response body: %v", err)
+	}
 
 	t.Log("✅ Complete integration flow successful!")
 }
