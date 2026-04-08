@@ -29,8 +29,11 @@ func checkDBExists() bool {
 
 // connectDB initiates a connection, checks for file existence, and pings the database.
 func connectDB() {
-	if !checkDBExists() {
-		fmt.Printf("Critical Error: Database file not found at %s\n", getDBPath())
+	dbPath := getDBPath()
+	
+	// Skip file check for in-memory database
+	if dbPath != ":memory:" && !checkDBExists() {
+		fmt.Printf("Critical Error: Database file not found at %s\n", dbPath)
 		os.Exit(1)
 	}
 
