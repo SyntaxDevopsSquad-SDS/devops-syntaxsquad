@@ -1,18 +1,10 @@
-DROP TABLE IF EXISTS pages_fts;
-DROP TABLE IF EXISTS pages;
-DROP TABLE IF EXISTS users;
+-- Migration 001: Add id to pages, language index and FTS5 full-text search
 
-CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  username TEXT NOT NULL UNIQUE,
-  email TEXT NOT NULL UNIQUE,
-  password TEXT NOT NULL
-);
+-- 1. Rename old table
+ALTER TABLE pages RENAME TO pages_old;
 
-INSERT INTO users (username, email, password)
-    VALUES ('admin', 'admin@whoknows.com', '$2a$10$v/spwONyDHojGbiU6V36BOcKJ/bSt9kO2pl41JJ/CMo0ZcruhWwvq');
-
-CREATE TABLE IF NOT EXISTS pages (
+-- 2. Create new pages table with id as PK
+CREATE TABLE pages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL UNIQUE,
     url TEXT NOT NULL UNIQUE,
@@ -21,8 +13,17 @@ CREATE TABLE IF NOT EXISTS pages (
     content TEXT NOT NULL
 );
 
+-- 3. Copy data
+INSERT INTO pages (title, url, language, last_updated, content)
+SELECT title, url, language, last_updated, content FROM pages_old;
+
+-- 4. Drop old table
+DROP TABLE pages_old;
+
+-- 5. Index on language
 CREATE INDEX IF NOT EXISTS idx_pages_language ON pages(language);
 
+-- 6. FTS5 virtual table
 CREATE VIRTUAL TABLE IF NOT EXISTS pages_fts USING fts5(
     title,
     content,
@@ -32,6 +33,11 @@ CREATE VIRTUAL TABLE IF NOT EXISTS pages_fts USING fts5(
     content_rowid='id'
 );
 
+-- 7. Populate FTS5 with existing data
+INSERT INTO pages_fts(rowid, title, content, language, url)
+SELECT id, title, content, language, url FROM pages;
+
+-- 8. Triggers to keep FTS5 in sync (Trigger for future changes)
 CREATE TRIGGER pages_ai AFTER INSERT ON pages BEGIN
     INSERT INTO pages_fts(rowid, title, content, language, url)
     VALUES (new.id, new.title, new.content, new.language, new.url);
@@ -48,10 +54,3 @@ CREATE TRIGGER pages_au AFTER UPDATE ON pages BEGIN
     INSERT INTO pages_fts(rowid, title, content, language, url)
     VALUES (new.id, new.title, new.content, new.language, new.url);
 END;
-
-INSERT OR IGNORE INTO pages (title, url, language, content) VALUES
-('Fortran',    'http://web.archive.org/web/20081220110619/http://en.wikipedia.org:80/wiki/Fortran',    'en', 'Fortran'),
-('Algorithm',  'http://web.archive.org/web/20081217070911/http://en.wikipedia.org:80/wiki/Algorithm',  'en', 'Algorithm'),
-('MATLAB',     'http://web.archive.org/web/20090110165251/http://en.wikipedia.org:80/wiki/Matlab',     'en', 'MATLAB'),
-('JavaScript', 'http://web.archive.org/web/20081218123622/http://en.wikipedia.org:80/wiki/Javascript', 'en', 'JavaScript'),
-('Database',   'http://web.archive.org/web/20081219060743/http://en.wikipedia.org:80/wiki/Database',   'en', 'Database');
