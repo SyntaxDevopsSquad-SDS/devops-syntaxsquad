@@ -1,8 +1,4 @@
-DROP TABLE IF EXISTS pages_fts;
-DROP TABLE IF EXISTS password_reset_tokens;
-DROP TABLE IF EXISTS pages;
-DROP TABLE IF EXISTS users;
-
+-- Initial database schema (only runs if DB doesn't exist)
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT NOT NULL UNIQUE,
@@ -12,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_reset_required_at TIMESTAMP
 );
 
-INSERT INTO users (username, email, password)
+INSERT OR IGNORE INTO users (username, email, password)
     VALUES ('admin', 'admin@whoknows.com', '$2a$10$v/spwONyDHojGbiU6V36BOcKJ/bSt9kO2pl41JJ/CMo0ZcruhWwvq');
 
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
