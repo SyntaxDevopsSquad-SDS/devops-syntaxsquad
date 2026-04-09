@@ -6,6 +6,7 @@ COPY implementations/go/go.mod implementations/go/go.sum ./
 RUN go mod download
 
 COPY implementations/go/backend ./backend
+COPY implementations/go/migrations ./migrations
 COPY implementations/go/templates ./templates
 COPY implementations/go/static ./static
 COPY implementations/go/schema.sql ./schema.sql

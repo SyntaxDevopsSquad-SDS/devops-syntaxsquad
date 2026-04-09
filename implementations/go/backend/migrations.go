@@ -10,11 +10,12 @@ import (
 )
 
 func runMigrations() error {
-	// Try multiple paths
+	// Try multiple paths (local dev and Docker)
 	var migrationDir string
 	possiblePaths := []string{
 		"./migrations",
 		"../migrations",
+		"../../migrations",
 		"implementations/go/migrations",
 	}
 
@@ -26,7 +27,8 @@ func runMigrations() error {
 	}
 
 	if migrationDir == "" {
-		return fmt.Errorf("could not find migrations directory")
+		log.Printf("warning: migrations directory not found, skipping migrations")
+		return nil
 	}
 
 	entries, err := os.ReadDir(migrationDir)
