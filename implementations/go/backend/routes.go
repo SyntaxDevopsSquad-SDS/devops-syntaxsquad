@@ -338,7 +338,9 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 
 	var storedHash string
-	err := db.QueryRow("SELECT password FROM users WHERE username = ?", username).Scan(&storedHash)
+	var userID int
+	var forceReset bool
+	err := db.QueryRow("SELECT id, password, COALESCE(force_password_reset, 0) FROM users WHERE username = ?", username).Scan(&userID, &storedHash, &forceReset)
 	if err != nil {
 		tmpl, _ := parseTemplates("layout.html", "login.html")
 		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Invalid username or password"}); err != nil {
@@ -364,6 +366,18 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			return
 		}
+	}
+
+	// If forced password reset, generate token and redirect
+	if forceReset {
+		token, err := generateResetToken(userID)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		setFlash(w, r, "Your account requires a password reset")
+		http.Redirect(w, r, "/reset-password?token="+token, http.StatusFound)
+		return
 	}
 
 	session, _ := store.Get(r, "session")
@@ -458,6 +472,77 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setFlash(w, r, "You were successfully registered and can login now")
+	http.Redirect(w, r, "/login", http.StatusFound)
+}
+
+func resetPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		http.Error(w, "Missing reset token", http.StatusBadRequest)
+		return
+	}
+
+	tmpl, err := parseTemplates("layout.html", "reset-password.html")
+	if err != nil {
+		http.Error(w, "Template error", http.StatusInternalServerError)
+		return
+	}
+
+	if err := tmpl.ExecuteTemplate(w, "layout", BaseData{
+		CSRFToken: token,
+		Flash:     getFlash(w, r),
+	}); err != nil {
+		log.Printf("error executing template: %v", err)
+	}
+}
+
+func apiResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+
+	token := r.FormValue("token")
+	password := r.FormValue("password")
+	password2 := r.FormValue("password2")
+
+	if token == "" {
+		http.Error(w, "Missing reset token", http.StatusBadRequest)
+		return
+	}
+
+	if len(password) < 8 {
+		setFlash(w, r, "Password must be at least 8 characters")
+		http.Redirect(w, r, "/reset-password?token="+token, http.StatusFound)
+		return
+	}
+
+	if password != password2 {
+		setFlash(w, r, "Passwords do not match")
+		http.Redirect(w, r, "/reset-password?token="+token, http.StatusFound)
+		return
+	}
+
+	userID, err := validateResetToken(token)
+	if err != nil {
+		http.Error(w, "Invalid or expired token", http.StatusBadRequest)
+		return
+	}
+
+	hashedPassword, err := hashPassword(password)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = db.Exec("UPDATE users SET password = ?, force_password_reset = 0 WHERE id = ?", hashedPassword, userID)
+	if err != nil {
+		log.Printf("error updating password: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	setFlash(w, r, "Password reset successful. Please log in.")
 	http.Redirect(w, r, "/login", http.StatusFound)
 }
 
