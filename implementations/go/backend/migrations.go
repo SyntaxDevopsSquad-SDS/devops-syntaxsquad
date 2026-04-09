@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -30,14 +29,14 @@ func runMigrations() error {
 		return fmt.Errorf("could not find migrations directory")
 	}
 
-	entries, err := ioutil.ReadDir(migrationDir)
+	entries, err := os.ReadDir(migrationDir)
 	if err != nil {
 		return fmt.Errorf("could not read migrations directory %s: %w", migrationDir, err)
 	}
 
-	var files []os.FileInfo
+	var files []os.DirEntry
 	for _, entry := range entries {
-		if strings.HasSuffix(entry.Name(), ".sql") {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".sql") {
 			files = append(files, entry)
 		}
 	}
@@ -47,7 +46,7 @@ func runMigrations() error {
 
 	for _, file := range files {
 		filePath := filepath.Join(migrationDir, file.Name())
-		sql, err := ioutil.ReadFile(filePath)
+		sql, err := os.ReadFile(filePath)
 		if err != nil {
 			return fmt.Errorf("could not read migration file %s: %w", file.Name(), err)
 		}
