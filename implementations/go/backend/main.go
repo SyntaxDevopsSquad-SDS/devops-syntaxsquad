@@ -27,23 +27,35 @@ func main() {
 	// 1. Forbind til databasen
 	connectDB()
 
-	// 2. Server static filer (CSS, billeder)
+	// 2. Run migrations
+	if err := runMigrations(); err != nil {
+		log.Fatalf("Migration failed: %v", err)
+	}
+
+	// 2. Run migrations
+	if err := runMigrations(); err != nil {
+		log.Fatalf("Migration failed: %v", err)
+	}
+
+	// 3. Server static filer (CSS, billeder)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("../static"))))
 
-	// 3. Page routes
+	// 4. Page routes
 	http.HandleFunc("/", searchHandler)
 	http.HandleFunc("/about", aboutHandler)
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/logout", logoutHandler)
 	http.HandleFunc("/register", registerHandler)
+	http.HandleFunc("/reset-password", resetPasswordHandler)
 
-	// 4. API routes
+	// 5. API routes
 	http.HandleFunc("/api/search", apiSearchHandler)
 	http.HandleFunc("/api/login", apiLoginHandler)
 	http.HandleFunc("/api/logout", apiLogoutHandler)
 	http.HandleFunc("/api/register", apiRegisterHandler)
+	http.HandleFunc("/api/reset-password", apiResetPasswordHandler)
 
-	// 5. Start serveren
+	// 6. Start serveren
 	fmt.Println("Server starter på port 8080...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

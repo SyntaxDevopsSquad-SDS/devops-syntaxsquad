@@ -42,3 +42,34 @@ func isMD5Hash(s string) bool {
 func md5Hash(password string) string {
 	return fmt.Sprintf("%x", md5.Sum([]byte(password)))
 }
+
+// generateResetToken creates a one-time password reset token and stores it in DB
+func generateResetToken(userID int) (string, error) {
+	token, err := generateCSRFToken() // Reuse secure random generation
+	if err != nil {
+		return "", err
+	}
+
+	query := `INSERT INTO password_reset_tokens (user_id, token, expires_at) 
+	          VALUES (?, ?, datetime('now', '+15 minutes'))`
+	_, err = db.Exec(query, userID, token)
+	if err != nil {
+		return "", err
+	}
+	return token, nil
+}
+
+// validateResetToken checks if token is valid and marks it as used
+func validateResetToken(token string) (int, error) {
+	query := `SELECT user_id FROM password_reset_tokens 
+	          WHERE token = ? AND expires_at > datetime('now') AND used_at IS NULL`
+	var userID int
+	err := db.QueryRow(query, token).Scan(&userID)
+	if err != nil {
+		return 0, fmt.Errorf("invalid or expired token")
+	}
+
+	// Mark token as used
+	_, err = db.Exec(`UPDATE password_reset_tokens SET used_at = datetime('now') WHERE token = ?`, token)
+	return userID, err
+}

@@ -1,4 +1,5 @@
 DROP TABLE IF EXISTS pages_fts;
+DROP TABLE IF EXISTS password_reset_tokens;
 DROP TABLE IF EXISTS pages;
 DROP TABLE IF EXISTS users;
 
@@ -6,11 +7,25 @@ CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   username TEXT NOT NULL UNIQUE,
   email TEXT NOT NULL UNIQUE,
-  password TEXT NOT NULL
+  password TEXT NOT NULL,
+  force_password_reset BOOLEAN DEFAULT 0,
+  password_reset_required_at TIMESTAMP
 );
 
 INSERT INTO users (username, email, password)
     VALUES ('admin', 'admin@whoknows.com', '$2a$10$v/spwONyDHojGbiU6V36BOcKJ/bSt9kO2pl41JJ/CMo0ZcruhWwvq');
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    token TEXT NOT NULL UNIQUE,
+    expires_at TIMESTAMP NOT NULL,
+    used_at TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_reset_tokens_user_id ON password_reset_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_reset_tokens_token ON password_reset_tokens(token);
 
 CREATE TABLE IF NOT EXISTS pages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
