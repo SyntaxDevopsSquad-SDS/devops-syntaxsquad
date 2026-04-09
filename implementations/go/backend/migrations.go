@@ -16,6 +16,7 @@ func runMigrations() error {
 		"./migrations",
 		"../migrations",
 		"../../migrations",
+		"/app/migrations",
 		"implementations/go/migrations",
 	}
 

@@ -22,6 +22,7 @@ RUN apt-get update \
 WORKDIR /app/backend
 
 COPY --from=build /out/whoknows /app/backend/whoknows
+COPY --from=build /src/implementations/go/migrations /app/migrations
 COPY --from=build /src/implementations/go/templates /app/templates
 COPY --from=build /src/implementations/go/static /app/static
 COPY --from=build /src/implementations/go/schema.sql /app/schema.sql
