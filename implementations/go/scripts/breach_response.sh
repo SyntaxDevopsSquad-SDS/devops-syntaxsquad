@@ -5,13 +5,6 @@ set -e
 # Marks affected users to require password reset
 # Usage: bash breach_response.sh
 
-DB_PATH="${DB_PATH:-whoknows.db}"
-
-if [ ! -f "$DB_PATH" ]; then
-    echo "Error: Database file not found at $DB_PATH"
-    exit 1
-fi
-
 echo "⚠️  Password Breach Response - Marking affected users for forced reset"
 echo ""
 
@@ -39,13 +32,19 @@ AFFECTED_USERS=(
     "Julius2002"
 )
 
+# Build SQL statements
+SQL_STATEMENTS=""
 for username in "${AFFECTED_USERS[@]}"; do
     echo "Marking user: $username"
-    sqlite3 "$DB_PATH" "UPDATE users SET force_password_reset = 1, password_reset_required_at = datetime('now') WHERE username = '$username';"
+    SQL_STATEMENTS+="UPDATE users SET force_password_reset = 1, password_reset_required_at = datetime('now') WHERE username = '$username';"$'\n'
 done
+
+# Execute via docker exec
+echo "Executing via Docker container..."
+sudo docker exec whoknows-whoknows-1 sqlite3 /data/whoknows.db << EOF
+$SQL_STATEMENTS
+SELECT username FROM users WHERE force_password_reset = 1;
+EOF
 
 echo ""
 echo "✅ Affected users marked for forced password reset"
-echo ""
-echo "Status:"
-sqlite3 "$DB_PATH" "SELECT username FROM users WHERE force_password_reset = 1;"
