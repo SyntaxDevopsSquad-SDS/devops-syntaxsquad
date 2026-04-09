@@ -96,7 +96,6 @@ jobs:
 
             # Run breach response automatically
             echo "Running breach response to mark affected users..."
-            cd /opt/whoknows/implementations/go/backend
-            bash ../../scripts/breach_response.sh || echo "Breach response script completed"
+            bash /opt/whoknows/implementations/go/scripts/breach_response.sh || echo "Breach response script completed"
 
             sudo docker image prune -f
