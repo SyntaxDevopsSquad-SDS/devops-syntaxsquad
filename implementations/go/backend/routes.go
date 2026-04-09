@@ -176,9 +176,11 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	var searchResults []Page
 
 	if query != "" {
+		// Add wildcard to allow partial matching (e.g., "f" matches "Fortran")
+		searchQuery := strings.TrimSpace(query) + "*"
 		rows, err := db.Query(
 			"SELECT p.title, p.content, p.language, p.url FROM pages_fts f JOIN pages p ON f.rowid = p.id WHERE f.language = ? AND pages_fts MATCH ?",
-			language, query,
+			language, searchQuery,
 		)
 		if err != nil {
 			http.Error(w, "Database error", http.StatusInternalServerError)
@@ -291,9 +293,11 @@ func apiSearchHandler(w http.ResponseWriter, r *http.Request) {
 	var searchResults []Page
 
 	if query != "" {
+		// Add wildcard to allow partial matching (e.g., "f" matches "Fortran")
+		searchQuery := strings.TrimSpace(query) + "*"
 		rows, err := db.Query(
 			"SELECT p.title, p.content, p.language, p.url FROM pages_fts f JOIN pages p ON f.rowid = p.id WHERE f.language = ? AND pages_fts MATCH ?",
-			language, query,
+			language, searchQuery,
 		)
 		if err != nil {
 			http.Error(w, "Database error", http.StatusInternalServerError)
