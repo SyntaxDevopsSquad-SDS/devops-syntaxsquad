@@ -1,0 +1,42 @@
+name: Smoke Test
+
+on:
+  workflow_run:
+    workflows: ["CD Deploy to VM"]
+    types:
+      - completed
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    steps:
+      - name: Run smoke test
+        run: |
+          URL="http://51.103.136.200:8080"
+
+          HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}\n" $URL)
+
+          if [ $HTTP_STATUS -eq 200 ]; then
+            echo ""
+            echo "  ██████  ██   ██  ██████   ██████ ███████ ███████ ███████"
+            echo "  ██      ██   ██ ██      ██      ██      ██      ██     "
+            echo "  ███████ ██   ██ ██      ██      █████   ███████ ███████"
+            echo "       ██ ██   ██ ██      ██      ██           ██      ██"
+            echo "  ██████   █████   ██████  ██████ ███████ ███████ ███████"
+            echo ""
+            echo "  Server responded with HTTP $HTTP_STATUS"
+            echo ""
+          else
+            echo ""
+            echo "  ███████  █████  ██ ██      ███████ ██████ "
+            echo "  ██      ██   ██ ██ ██      ██      ██   ██"
+            echo "  █████   ███████ ██ ██      █████   ██   ██"
+            echo "  ██      ██   ██ ██ ██      ██      ██   ██"
+            echo "  ██      ██   ██ ██ ███████ ███████ ██████ "
+            echo ""
+            echo "  Status code: $HTTP_STATUS"
+            echo ""
+            exit 1
+          fi
