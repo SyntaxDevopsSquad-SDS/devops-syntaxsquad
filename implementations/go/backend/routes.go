@@ -474,9 +474,15 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
-	setFlash(w, r, "You were successfully registered and can login now")
-	http.Redirect(w, r, "/login", http.StatusFound)
+	session, _ := store.Get(r, "session")
+	session.Values["user"] = username
+	if err := session.Save(r, w); err != nil {
+		log.Printf("error saving session: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	setFlash(w, r, "You were successfully registered and logged in")
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func resetPasswordHandler(w http.ResponseWriter, r *http.Request) {
