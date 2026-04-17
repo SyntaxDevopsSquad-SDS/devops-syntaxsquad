@@ -180,6 +180,52 @@ CSRF_RELAXED=true
 
 ---
 
+## Monitoring (Prometheus + Grafana)
+
+The Go backend now exposes a Prometheus endpoint at:
+
+- `GET /metrics` (same host/port as app, default `:8080`)
+
+### Available Metrics
+
+- `whoknows_http_requests_total{method,path,status}`
+- `whoknows_http_request_duration_seconds{method,path}`
+- `whoknows_login_attempts_total{outcome}`
+- `whoknows_registrations_total{outcome}`
+- `whoknows_searches_total{source,language,query,outcome}`
+
+`whoknows_searches_total` lets you chart searches for specific terms via the `query` label.
+
+### Prometheus Query Examples
+
+```promql
+# Total HTTP requests in the last 5 minutes
+sum(increase(whoknows_http_requests_total[5m]))
+
+# Successful logins in the last 1 hour
+increase(whoknows_login_attempts_total{outcome="success"}[1h])
+
+# Successful registrations in the last 1 hour
+increase(whoknows_registrations_total{outcome="success"}[1h])
+
+# Searches for a specific term (example: "fortran") in the last 1 hour
+increase(whoknows_searches_total{query="fortran"}[1h])
+```
+
+### Separate Monitoring VM
+
+Prometheus + Grafana can run in a separate repository and on a separate VM.
+
+On that monitoring VM, configure Prometheus to scrape this app endpoint:
+
+```yaml
+scrape_configs:
+    - job_name: "whoknows-go-backend"
+        metrics_path: /metrics
+        static_configs:
+            - targets: ["<APP_VM_PUBLIC_OR_PRIVATE_IP>:8080"]
+```
+
 ## 🔄 Development Workflow
 
 ### Git Commit Conventions

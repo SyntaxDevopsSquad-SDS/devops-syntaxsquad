@@ -27,6 +27,9 @@ func main() {
 	// 1. Forbind til databasen
 	connectDB()
 
+	// Initialize and expose Prometheus metrics
+	initMetrics()
+
 	// 2. Run migrations
 	if err := runMigrations(); err != nil {
 		log.Fatalf("Migration failed: %v", err)
@@ -54,8 +57,9 @@ func main() {
 	http.HandleFunc("/api/logout", apiLogoutHandler)
 	http.HandleFunc("/api/register", apiRegisterHandler)
 	http.HandleFunc("/api/reset-password", apiResetPasswordHandler)
+	registerMetricsRoute()
 
 	// 6. Start serveren
 	fmt.Println("Server starter på port 8080...")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", metricsMiddleware(http.DefaultServeMux)))
 }
