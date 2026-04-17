@@ -190,9 +190,9 @@ The Go backend now exposes a Prometheus endpoint at:
 
 - `whoknows_http_requests_total{method,path,status}`
 - `whoknows_http_request_duration_seconds{method,path}`
-- `whoknows_login_attempts_total{outcome}`
-- `whoknows_registrations_total{outcome}`
-- `whoknows_searches_total{source,language,query,outcome}`
+- `whoknows_login_attempts_total{outcome}` where `outcome` is `success|failure`
+- `whoknows_registrations_total{outcome}` where `outcome` is `success|validation_error|failure`
+- `whoknows_searches_total{source,language,query,outcome}` where `source` is `web|api` and `outcome` is `success|failure`
 
 `whoknows_searches_total` lets you chart searches for specific terms via the `query` label.
 

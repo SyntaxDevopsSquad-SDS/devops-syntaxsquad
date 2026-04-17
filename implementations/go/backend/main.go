@@ -35,11 +35,6 @@ func main() {
 		log.Fatalf("Migration failed: %v", err)
 	}
 
-	// 2. Run migrations
-	if err := runMigrations(); err != nil {
-		log.Fatalf("Migration failed: %v", err)
-	}
-
 	// 3. Server static filer (CSS, billeder)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("../static"))))
 
