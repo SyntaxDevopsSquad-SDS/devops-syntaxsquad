@@ -9,8 +9,14 @@ import (
 )
 
 // setupTestDB creates an in-memory SQLite database with test data
+// setupTestDB creates an in-memory SQLite database with test data
 func setupTestDB(t *testing.T) {
 	t.Helper()
+
+	// 1. Hvis der allerede er en åben forbindelse, så luk den før vi starter en ny
+	if db != nil {
+		_ = db.Close()
+	}
 
 	var err error
 	db, err = sql.Open("sqlite", ":memory:")
@@ -18,6 +24,15 @@ func setupTestDB(t *testing.T) {
 		t.Fatalf("Failed to open in-memory database: %v", err)
 	}
 
+	// 2. Registrer en automatisk oprydning, der kører når testen er slut
+	t.Cleanup(func() {
+		if db != nil {
+			_ = db.Close()
+			db = nil // Sæt den til nil så vi ved den er lukket
+		}
+	})
+
+	// ... resten af din kode (CREATE TABLE og INSERT INTO)
 	_, err = db.Exec(`
         CREATE TABLE IF NOT EXISTS users (
             id       INTEGER PRIMARY KEY AUTOINCREMENT,
