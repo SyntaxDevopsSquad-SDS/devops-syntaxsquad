@@ -39,7 +39,7 @@ func TestMD5Logic(t *testing.T) {
 	// 2: Does the regex reject invalid strings?
 	invalidHashes := []string{
 		"not-a-hash",
-		"a-f0-9",                          // Too short
+		"a-f0-9",                           // Too short
 		"g1234567890123456789012345678901", // Invalid character 'g'
 	}
 
@@ -80,7 +80,7 @@ func TestResetTokenFlow(t *testing.T) {
 		expires_at DATETIME NOT NULL,
 		used_at DATETIME
 	);`
-	
+
 	_, err := db.Exec(createTableSQL)
 	if err != nil {
 		t.Fatalf("Failed to create temporary test table: %v", err)
@@ -117,26 +117,28 @@ func TestResetTokenFlow(t *testing.T) {
 
 // Negative path
 func TestExpiredResetToken(t *testing.T) {
-    // We reuse the database setup
-    if db == nil { t.Skip() }
+	// We reuse the database setup
+	if db == nil {
+		t.Skip()
+	}
 
-    // 1. Manually insert an EXPIRED token (1 hour ago)
-    expiredToken := "i-am-old-and-expired"
-    _, err := db.Exec(`
+	// 1. Manually insert an EXPIRED token (1 hour ago)
+	expiredToken := "i-am-old-and-expired"
+	_, err := db.Exec(`
         INSERT INTO password_reset_tokens (user_id, token, expires_at) 
         VALUES (?, ?, datetime('now', '-1 hour'))`, 1, expiredToken)
-    
-    if err != nil {
-        t.Fatalf("Failed to insert expired token: %v", err)
-    }
 
-    // 2. Try to validate it
-    _, err = validateResetToken(expiredToken)
-    
-    // 3. We EXPECT an error here
-    if err == nil {
-        t.Error("Security flaw: System accepted an expired token!")
-    } else {
-        t.Logf("Correctly rejected expired token with error: %v", err)
-    }
+	if err != nil {
+		t.Fatalf("Failed to insert expired token: %v", err)
+	}
+
+	// 2. Try to validate it
+	_, err = validateResetToken(expiredToken)
+
+	// 3. We EXPECT an error here
+	if err == nil {
+		t.Error("Security flaw: System accepted an expired token!")
+	} else {
+		t.Logf("Correctly rejected expired token with error: %v", err)
+	}
 }

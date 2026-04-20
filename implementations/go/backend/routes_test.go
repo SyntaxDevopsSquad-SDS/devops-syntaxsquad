@@ -64,7 +64,7 @@ func TestCSRFLogic(t *testing.T) {
 
 func TestAPILoginHandler(t *testing.T) {
 	setupRoutesTest()
-	setupTestDB(t) 
+	setupTestDB(t)
 	// Do NOT defer db.Close() here to keep DB alive for other tests
 
 	// Ensure the temporary table matches what the handler expects
@@ -73,7 +73,7 @@ func TestAPILoginHandler(t *testing.T) {
 	// Pre-create a user for the tests
 	password := "testpass123"
 	hash, _ := hashPassword(password)
-	_, _ = db.Exec("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", 
+	_, _ = db.Exec("INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
 		"testuser", "test@test.com", hash)
 
 	t.Run("Successful Login", func(t *testing.T) {
@@ -136,7 +136,7 @@ func TestHTMLHandlers(t *testing.T) {
 
 		aboutHandler(w, r)
 
-		// Vi tjekker om siden indlæses korrekt. 
+		// Vi tjekker om siden indlæses korrekt.
 		// Hvis denne fejler med 500, er det ofte fordi den ikke kan finde 'layout.html'
 		if w.Code != http.StatusOK {
 			t.Errorf("Expected status 200 for About page, got %d", w.Code)

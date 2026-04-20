@@ -129,7 +129,7 @@ func TestQueryDBInvalidSQL(t *testing.T) {
 	setupTestDB(t)
 	// We call a table that doesn't exist
 	_, err := QueryDB("SELECT * FROM non_existent_table", []interface{}{}, false)
-	
+
 	if err == nil {
 		t.Error("Expected an error when querying a non-existent table, but got nil")
 	} else {
@@ -143,7 +143,7 @@ func TestDatabaseCRUD(t *testing.T) {
 
 	// --- CREATE ---
 	t.Run("Create User", func(t *testing.T) {
-		_, err := db.Exec("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", 
+		_, err := db.Exec("INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
 			"newuser", "new@test.com", "hash123")
 		if err != nil {
 			t.Fatalf("Failed to insert user: %v", err)
