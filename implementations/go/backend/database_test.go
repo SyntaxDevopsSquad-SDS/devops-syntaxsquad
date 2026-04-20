@@ -32,7 +32,6 @@ func setupTestDB(t *testing.T) {
 		}
 	})
 
-	// ... resten af din kode (CREATE TABLE og INSERT INTO)
 	_, err = db.Exec(`
         CREATE TABLE IF NOT EXISTS users (
             id       INTEGER PRIMARY KEY AUTOINCREMENT,
