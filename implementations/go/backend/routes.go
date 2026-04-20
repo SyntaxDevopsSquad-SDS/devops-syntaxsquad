@@ -183,7 +183,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 			language, searchQuery,
 		)
 		if err != nil {
-			recordSearch("html", language, query, 0, true)
+			recordSearch("web", language, query, true)
 			http.Error(w, "Database error", http.StatusInternalServerError)
 			return
 		}
@@ -196,14 +196,20 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		for rows.Next() {
 			var page Page
 			if err := rows.Scan(&page.Title, &page.Content, &page.Language, &page.URL); err != nil {
-				recordSearch("html", language, query, 0, true)
+				recordSearch("web", language, query, true)
 				http.Error(w, "Scan error", http.StatusInternalServerError)
 				return
 			}
 			searchResults = append(searchResults, page)
 		}
 
-		recordSearch("html", language, query, len(searchResults), false)
+		if err := rows.Err(); err != nil {
+			recordSearch("web", language, query, true)
+			http.Error(w, "Scan error", http.StatusInternalServerError)
+			return
+		}
+
+		recordSearch("web", language, query, false)
 	}
 
 	tmpl, err := parseTemplates("layout.html", "search.html")
@@ -304,7 +310,7 @@ func apiSearchHandler(w http.ResponseWriter, r *http.Request) {
 			language, searchQuery,
 		)
 		if err != nil {
-			recordSearch("api", language, query, 0, true)
+			recordSearch("api", language, query, true)
 			http.Error(w, "Database error", http.StatusInternalServerError)
 			return
 		}
@@ -317,14 +323,20 @@ func apiSearchHandler(w http.ResponseWriter, r *http.Request) {
 		for rows.Next() {
 			var page Page
 			if err := rows.Scan(&page.Title, &page.Content, &page.Language, &page.URL); err != nil {
-				recordSearch("api", language, query, 0, true)
+				recordSearch("api", language, query, true)
 				http.Error(w, "Scan error", http.StatusInternalServerError)
 				return
 			}
 			searchResults = append(searchResults, page)
 		}
 
-		recordSearch("api", language, query, len(searchResults), false)
+		if err := rows.Err(); err != nil {
+			recordSearch("api", language, query, true)
+			http.Error(w, "Scan error", http.StatusInternalServerError)
+			return
+		}
+
+		recordSearch("api", language, query, false)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -342,6 +354,11 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	outcome := loginOutcomeFailure
+	defer func() {
+		recordLoginAttempt(outcome)
+	}()
+
 	if !requireCSRF(w, r, "/api/login") {
 		return
 	}
@@ -351,10 +368,9 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var storedHash string
 	var userID int
-	var forceReset bool
+	var forceReset int
 	err := db.QueryRow("SELECT id, password, COALESCE(force_password_reset, 0) FROM users WHERE username = ?", username).Scan(&userID, &storedHash, &forceReset)
 	if err != nil {
-		loginAttemptsTotal.WithLabelValues("failure").Inc()
 		tmpl, _ := parseTemplates("layout.html", "login.html")
 		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Invalid username or password"}); err != nil {
 			log.Printf("error executing template: %v", err)
@@ -373,7 +389,6 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		} else {
-			loginAttemptsTotal.WithLabelValues("failure").Inc()
 			tmpl, _ := parseTemplates("layout.html", "login.html")
 			if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Invalid username or password"}); err != nil {
 				log.Printf("error executing template: %v", err)
@@ -383,8 +398,7 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If forced password reset, generate token and redirect
-	if forceReset {
-		loginAttemptsTotal.WithLabelValues("reset_required").Inc()
+	if forceReset == 1 {
 		token, err := generateResetToken(userID)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -404,7 +418,7 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setFlash(w, r, "You were logged in")
-	loginAttemptsTotal.WithLabelValues("success").Inc()
+	outcome = loginOutcomeSuccess
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
@@ -413,6 +427,11 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/register", http.StatusFound)
 		return
 	}
+
+	outcome := registrationOutcomeFailure
+	defer func() {
+		recordRegistrationAttempt(outcome)
+	}()
 
 	if !requireCSRF(w, r, "/api/register") {
 		return
@@ -424,7 +443,7 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	password2 := r.FormValue("password2")
 
 	if username == "" {
-		registrationsTotal.WithLabelValues("validation_error").Inc()
+		outcome = registrationOutcomeValidationError
 		tmpl, _ := parseTemplates("layout.html", "register.html")
 		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "You have to enter a username"}); err != nil {
 			log.Printf("error executing template: %v", err)
@@ -433,7 +452,7 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if email == "" || !strings.Contains(email, "@") {
-		registrationsTotal.WithLabelValues("validation_error").Inc()
+		outcome = registrationOutcomeValidationError
 		tmpl, _ := parseTemplates("layout.html", "register.html")
 		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "You have to enter a valid email address"}); err != nil {
 			log.Printf("error executing template: %v", err)
@@ -442,7 +461,7 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(password) < 8 {
-		registrationsTotal.WithLabelValues("validation_error").Inc()
+		outcome = registrationOutcomeValidationError
 		tmpl, _ := parseTemplates("layout.html", "register.html")
 		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Password must be at least 8 characters"}); err != nil {
 			log.Printf("error executing template: %v", err)
@@ -451,7 +470,7 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if password != password2 {
-		registrationsTotal.WithLabelValues("validation_error").Inc()
+		outcome = registrationOutcomeValidationError
 		tmpl, _ := parseTemplates("layout.html", "register.html")
 		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "The two passwords do not match"}); err != nil {
 			log.Printf("error executing template: %v", err)
@@ -461,13 +480,12 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	var exists int
 	if err := db.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", username).Scan(&exists); err != nil {
-		registrationsTotal.WithLabelValues("error").Inc()
 		log.Printf("error checking username existence: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
 	if exists > 0 {
-		registrationsTotal.WithLabelValues("already_exists").Inc()
+		outcome = registrationOutcomeValidationError
 		tmpl, _ := parseTemplates("layout.html", "register.html")
 		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "The username is already taken"}); err != nil {
 			log.Printf("error executing template: %v", err)
@@ -477,7 +495,6 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	hashedPassword, err := hashPassword(password)
 	if err != nil {
-		registrationsTotal.WithLabelValues("error").Inc()
 		fmt.Println("Hash error:", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
@@ -486,7 +503,6 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	_, err = db.Exec("INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
 		username, email, hashedPassword)
 	if err != nil {
-		registrationsTotal.WithLabelValues("error").Inc()
 		fmt.Println("Register error:", err)
 		tmpl, _ := parseTemplates("layout.html", "register.html")
 		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Could not create user"}); err != nil {
@@ -502,7 +518,7 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	setFlash(w, r, "You were successfully registered and logged in")
-	registrationsTotal.WithLabelValues("success").Inc()
+	outcome = registrationOutcomeSuccess
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
