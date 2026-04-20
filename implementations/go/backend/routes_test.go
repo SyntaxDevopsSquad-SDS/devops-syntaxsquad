@@ -22,8 +22,14 @@ func setupRoutesTest() {
 */
 
 func TestGetSecretKey(t *testing.T) {
-	os.Setenv("SECRET_KEY", "my-super-secret")
-	defer os.Unsetenv("SECRET_KEY")
+	// 1. Vi bruger '_ =' for at sige: "Jeg ved den returnerer en fejl, men jeg ignorerer den med vilje"
+	_ = os.Setenv("SECRET_KEY", "my-super-secret")
+
+	// 2. 'defer' skal pakkes ind i en lille anonym funktion for at vi kan ignorere fejlen indeni den
+	defer func() {
+		_ = os.Unsetenv("SECRET_KEY")
+	}()
+
 	key := getSecretKey()
 	if string(key) != "my-super-secret" {
 		t.Errorf("Expected secret key 'my-super-secret', got '%s'", string(key))

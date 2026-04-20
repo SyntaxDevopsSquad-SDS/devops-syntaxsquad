@@ -33,7 +33,7 @@ func setupTestDB(t *testing.T) {
 	_, err = db.Exec(`
         INSERT INTO users (username, email, password)
         VALUES ('admin', 'admin@test.com', 'hashedpassword123')
-	`)
+    `)
 	if err != nil {
 		t.Fatalf("Failed to insert test data: %v", err)
 	}
@@ -87,17 +87,21 @@ func TestQueryDB(t *testing.T) {
 
 // TestGetDBPath verifies that we can change the DB path via environment variables
 func TestGetDBPath(t *testing.T) {
-	// Test 1: Default value when environment variable is not set
-	os.Unsetenv("DB_PATH") // Ensure it's empty
+	// Test 1: Default value
+	_ = os.Unsetenv("DB_PATH")
 	expectedDefault := "whoknows.db"
 	if path := getDBPath(); path != expectedDefault {
 		t.Errorf("Expected default path %s, but got %s", expectedDefault, path)
 	}
 
-	// Test 2: Custom value via environment variable
+	// Test 2: Custom value
 	customPath := "/tmp/test_database.db"
-	os.Setenv("DB_PATH", customPath)
-	defer os.Unsetenv("DB_PATH") // Clean up after the test
+	_ = os.Setenv("DB_PATH", customPath)
+
+	// Clean up environment after test
+	defer func() {
+		_ = os.Unsetenv("DB_PATH")
+	}()
 
 	if path := getDBPath(); path != customPath {
 		t.Errorf("Expected custom path %s, but got %s", customPath, path)
@@ -106,19 +110,22 @@ func TestGetDBPath(t *testing.T) {
 
 // TestCheckDBExists verifies the file detection logic
 func TestCheckDBExists(t *testing.T) {
-	// Test 1: A file that definitely doesn't exist
-	os.Setenv("DB_PATH", "non_existent_file_999.db")
+	// Test 1: File doesn't exist
+	_ = os.Setenv("DB_PATH", "non_existent_file_999.db")
 	if checkDBExists() {
 		t.Error("checkDBExists returned true for a file that does not exist")
 	}
 
-	// Test 2: A file that exists (we create a temporary one)
+	// Test 2: File exists
 	tempFile := "temp_test.db"
 	f, _ := os.Create(tempFile)
-	f.Close()
-	defer os.Remove(tempFile) // Always clean up files in tests!
+	_ = f.Close()
 
-	os.Setenv("DB_PATH", tempFile)
+	defer func() {
+		_ = os.Remove(tempFile)
+	}()
+
+	_ = os.Setenv("DB_PATH", tempFile)
 	if !checkDBExists() {
 		t.Error("checkDBExists returned false for a file that actually exists")
 	}
@@ -127,7 +134,6 @@ func TestCheckDBExists(t *testing.T) {
 // TestQueryDBInvalidSQL verifies that the function returns an error for bad queries
 func TestQueryDBInvalidSQL(t *testing.T) {
 	setupTestDB(t)
-	// We call a table that doesn't exist
 	_, err := QueryDB("SELECT * FROM non_existent_table", []interface{}{}, false)
 
 	if err == nil {
@@ -141,7 +147,6 @@ func TestQueryDBInvalidSQL(t *testing.T) {
 func TestDatabaseCRUD(t *testing.T) {
 	setupTestDB(t)
 
-	// --- CREATE ---
 	t.Run("Create User", func(t *testing.T) {
 		_, err := db.Exec("INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
 			"newuser", "new@test.com", "hash123")
@@ -149,14 +154,12 @@ func TestDatabaseCRUD(t *testing.T) {
 			t.Fatalf("Failed to insert user: %v", err)
 		}
 
-		// Verify it exists
 		res, _ := QueryDB("SELECT * FROM users WHERE username = ?", []interface{}{"newuser"}, true)
 		if res == nil {
 			t.Error("User was not found after insertion")
 		}
 	})
 
-	// --- UPDATE ---
 	t.Run("Update User Email", func(t *testing.T) {
 		_, err := db.Exec("UPDATE users SET email = ? WHERE username = ?", "updated@test.com", "admin")
 		if err != nil {
@@ -170,7 +173,6 @@ func TestDatabaseCRUD(t *testing.T) {
 		}
 	})
 
-	// --- DELETE ---
 	t.Run("Delete User", func(t *testing.T) {
 		_, err := db.Exec("DELETE FROM users WHERE username = ?", "admin")
 		if err != nil {
