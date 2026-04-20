@@ -161,9 +161,8 @@ func TestHTMLHandlers(t *testing.T) {
 
 		// Vi tjekker om der rent faktisk er genereret et CSRF token til formularen
 		body := w.Body.String()
-		if !strings.Contains(body, "") && w.Code == 200 {
-			// Hvis vi ikke får en fejl, men body er tom, kan det være template-rendering der driller
-			t.Log("Note: Template rendering skipped or empty body, but status is 200")
+		if !strings.Contains(body, "name=\"csrf_token\"") {
+			t.Errorf("Expected Register page to contain CSRF hidden input name=\"csrf_token\", body was: %s", body)
 		}
 	})
 
