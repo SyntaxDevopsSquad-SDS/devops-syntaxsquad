@@ -4,7 +4,7 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 
 ## 🌐 Live Application
 
-> **URL:** `<!-- TODO: indsæt domæne her -->`
+> **URL:** `<!-- (https://www.syntax-reborndev.com/) -->`
 
 ---
 
