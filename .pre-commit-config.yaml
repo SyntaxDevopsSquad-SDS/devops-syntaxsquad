@@ -1,0 +1,18 @@
+repos:
+  - repo: local
+    hooks:
+      - id: go-fmt
+        name: go fmt
+        entry: gofmt -l -w .
+        language: system
+        types: [go]
+      - id: go-vet
+        name: go vet
+        entry: bash -c 'cd implementations/go && go vet ./...'
+        language: system
+        pass_filenames: false
+      - id: go-build
+        name: go build
+        entry: bash -c 'cd implementations/go && go build -o /tmp/whoknows-check ./...'
+        language: system
+        pass_filenames: false
