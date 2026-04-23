@@ -6,10 +6,10 @@
   <form action="/api/login" method="POST">
     <input type="hidden" name="csrf_token" value="{{ .CSRFToken }}">
     <dl>
-        <dt>Username:</dt>
-        <dd><input type="text" name="username" size="30"></dd>
-        <dt>Password:</dt>
-        <dd><input type="password" name="password" size="30"></dd>
+        <dt><label for="username">Username:</label></dt>
+        <dd><input type="text" id="username" name="username" size="30"></dd>
+        <dt><label for="password">Password:</label></dt>
+        <dd><input type="password" id="password" name="password" size="30"></dd>
     </dl>
     <div class="actions">
         <input type="submit" id="login-button" value="Log In">
