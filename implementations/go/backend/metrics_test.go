@@ -12,16 +12,21 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/lib/pq"
 )
 
 func setupMetricsTestDB(t *testing.T) {
 	t.Helper()
 
 	var err error
-	db, err = sql.Open("sqlite", ":memory:")
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		dsn = "postgres://whoknows:whoknows@localhost:5432/whoknows_test?sslmode=disable"
+	}
+
+	db, err = sql.Open("postgres", dsn)
 	if err != nil {
-		t.Fatalf("failed to open in-memory db: %v", err)
+		t.Fatalf("failed to open db: %v", err)
 	}
 	t.Cleanup(func() {
 		if err := db.Close(); err != nil {
@@ -30,29 +35,24 @@ func setupMetricsTestDB(t *testing.T) {
 	})
 
 	_, err = db.Exec(`
+		DROP TABLE IF EXISTS users CASCADE;
+		DROP TABLE IF EXISTS pages CASCADE;
+
 		CREATE TABLE users (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			id SERIAL PRIMARY KEY,
 			username TEXT NOT NULL UNIQUE,
 			email TEXT NOT NULL UNIQUE,
 			password TEXT NOT NULL,
-			force_password_reset BOOLEAN DEFAULT 0
+			force_password_reset BOOLEAN DEFAULT FALSE
 		);
 
 		CREATE TABLE pages (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			id SERIAL PRIMARY KEY,
 			title TEXT NOT NULL UNIQUE,
 			url TEXT NOT NULL UNIQUE,
 			language TEXT NOT NULL DEFAULT 'en',
-			content TEXT NOT NULL
-		);
-
-		CREATE VIRTUAL TABLE pages_fts USING fts5(
-			title,
-			content,
-			language UNINDEXED,
-			url UNINDEXED,
-			content='pages',
-			content_rowid='id'
+			content TEXT NOT NULL,
+			search_vector tsvector
 		);
 	`)
 	if err != nil {
@@ -148,7 +148,7 @@ func TestLoginMetricsSuccessAndFailureIncrementOncePerAttempt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed hashing password: %v", err)
 	}
-	_, err = db.Exec("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", "loginuser", "login@example.com", hash)
+	_, err = db.Exec("INSERT INTO users (username, email, password) VALUES ($1, $2, $3)", "loginuser", "login@example.com", hash)
 	if err != nil {
 		t.Fatalf("failed inserting login user: %v", err)
 	}
@@ -225,7 +225,7 @@ func TestRegistrationMetricsOutcomeLabels(t *testing.T) {
 		setupMetricsTestRuntime(t)
 		setupMetricsTestDB(t)
 
-		_, err := db.Exec("DROP TABLE users")
+		_, err := db.Exec("DROP TABLE IF EXISTS users CASCADE")
 		if err != nil {
 			t.Fatalf("failed dropping users table for failure test: %v", err)
 		}
