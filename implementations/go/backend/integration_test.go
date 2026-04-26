@@ -12,13 +12,11 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-// setupTestServer creates a test HTTP server with in-memory database
 func setupTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
 
-	// Set test environment
-	if err := os.Setenv("DB_PATH", ":memory:"); err != nil {
-		t.Fatalf("Failed to set DB_PATH: %v", err)
+	if err := os.Setenv("DATABASE_URL", "postgres://whoknows:whoknows@localhost:5432/whoknows_test?sslmode=disable"); err != nil {
+		t.Fatalf("Failed to set DATABASE_URL: %v", err)
 	}
 	if err := os.Setenv("SECRET_KEY", "test-secret-key-for-integration-tests"); err != nil {
 		t.Fatalf("Failed to set SECRET_KEY: %v", err)
@@ -27,27 +25,29 @@ func setupTestServer(t *testing.T) *httptest.Server {
 		t.Fatalf("Failed to set CSRF_RELAXED: %v", err)
 	}
 
-	// Initialize session store
 	store = sessions.NewCookieStore(getSecretKey())
 
-	// Connect to in-memory database
 	connectDB()
 
-	// Initialize schema for in-memory database
 	schema := `
+	DROP TABLE IF EXISTS users CASCADE;
+	DROP TABLE IF EXISTS pages CASCADE;
+
 	CREATE TABLE IF NOT EXISTS users (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		id SERIAL PRIMARY KEY,
 		username TEXT NOT NULL UNIQUE,
 		email TEXT NOT NULL UNIQUE,
 		password TEXT NOT NULL
 	);
 
 	CREATE TABLE IF NOT EXISTS pages (
-		title TEXT PRIMARY KEY UNIQUE,
+		id SERIAL PRIMARY KEY,
+		title TEXT NOT NULL UNIQUE,
 		url TEXT NOT NULL UNIQUE,
 		language TEXT NOT NULL CHECK(language IN ('en', 'da')) DEFAULT 'en',
 		last_updated TIMESTAMP,
-		content TEXT NOT NULL
+		content TEXT NOT NULL,
+		search_vector tsvector
 	);`
 
 	_, err := db.Exec(schema)
@@ -55,7 +55,6 @@ func setupTestServer(t *testing.T) *httptest.Server {
 		t.Fatalf("Failed to initialize test schema: %v", err)
 	}
 
-	// Create test server with routes
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", searchHandler)
 	mux.HandleFunc("/login", loginHandler)
@@ -69,7 +68,6 @@ func setupTestServer(t *testing.T) *httptest.Server {
 	return httptest.NewServer(mux)
 }
 
-// TestAPIRegister tests user registration flow
 func TestAPIRegister(t *testing.T) {
 	server := setupTestServer(t)
 	defer server.Close()
@@ -89,7 +87,7 @@ func TestAPIRegister(t *testing.T) {
 			email:          "test@example.com",
 			password:       "password123",
 			password2:      "password123",
-			expectedStatus: http.StatusFound, // Redirect on success
+			expectedStatus: http.StatusFound,
 			shouldSucceed:  true,
 		},
 		{
@@ -98,7 +96,7 @@ func TestAPIRegister(t *testing.T) {
 			email:          "test2@example.com",
 			password:       "short",
 			password2:      "short",
-			expectedStatus: http.StatusOK, // Re-render form with error
+			expectedStatus: http.StatusOK,
 			shouldSucceed:  false,
 		},
 		{
@@ -123,20 +121,16 @@ func TestAPIRegister(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// TEMPORARY SKIP: Test expects redirect but http.Post follows redirects automatically
-			// TODO: Fix by using custom HTTP client with CheckRedirect
 			if tt.name == "Valid registration" {
 				t.Skip("FIXME: Need custom HTTP client to test redirects properly")
 			}
 
-			// Prepare form data
 			form := url.Values{}
 			form.Add("username", tt.username)
 			form.Add("email", tt.email)
 			form.Add("password", tt.password)
 			form.Add("password2", tt.password2)
 
-			// Make request
 			resp, err := http.Post(
 				server.URL+"/api/register",
 				"application/x-www-form-urlencoded",
@@ -151,15 +145,13 @@ func TestAPIRegister(t *testing.T) {
 				}
 			}()
 
-			// Verify status code
 			if resp.StatusCode != tt.expectedStatus {
 				t.Errorf("Expected status %d, got %d", tt.expectedStatus, resp.StatusCode)
 			}
 
-			// If should succeed, verify user exists in database
 			if tt.shouldSucceed {
 				var exists int
-				err := db.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", tt.username).Scan(&exists)
+				err := db.QueryRow("SELECT COUNT(*) FROM users WHERE username = $1", tt.username).Scan(&exists)
 				if err != nil {
 					t.Fatalf("Failed to query database: %v", err)
 				}
@@ -171,12 +163,10 @@ func TestAPIRegister(t *testing.T) {
 	}
 }
 
-// TestAPILogin tests login flow with session management
 func TestAPILogin(t *testing.T) {
 	server := setupTestServer(t)
 	defer server.Close()
 
-	// First, create a test user
 	form := url.Values{}
 	form.Add("username", "logintest")
 	form.Add("email", "logintest@example.com")
@@ -208,14 +198,14 @@ func TestAPILogin(t *testing.T) {
 			name:           "Valid login",
 			username:       "logintest",
 			password:       "password123",
-			expectedStatus: http.StatusFound, // Redirect on success
+			expectedStatus: http.StatusFound,
 			shouldSucceed:  true,
 		},
 		{
 			name:           "Invalid password",
 			username:       "logintest",
 			password:       "wrongpassword",
-			expectedStatus: http.StatusOK, // Re-render form
+			expectedStatus: http.StatusOK,
 			shouldSucceed:  false,
 		},
 		{
@@ -229,18 +219,14 @@ func TestAPILogin(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// TEMPORARY SKIP: Test expects redirect but http.Post follows redirects automatically
-			// TODO: Fix by using custom HTTP client with CheckRedirect
 			if tt.name == "Valid login" {
 				t.Skip("FIXME: Need custom HTTP client to test redirects properly")
 			}
 
-			// Prepare login form
 			form := url.Values{}
 			form.Add("username", tt.username)
 			form.Add("password", tt.password)
 
-			// Make login request
 			resp, err := http.Post(
 				server.URL+"/api/login",
 				"application/x-www-form-urlencoded",
@@ -255,12 +241,10 @@ func TestAPILogin(t *testing.T) {
 				}
 			}()
 
-			// Verify status code
 			if resp.StatusCode != tt.expectedStatus {
 				t.Errorf("Expected status %d, got %d", tt.expectedStatus, resp.StatusCode)
 			}
 
-			// If should succeed, verify session cookie is set
 			if tt.shouldSucceed {
 				cookies := resp.Cookies()
 				hasSessionCookie := false
@@ -278,16 +262,12 @@ func TestAPILogin(t *testing.T) {
 	}
 }
 
-// TestAPISearchAuthentication tests that search requires authentication
 func TestAPISearchAuthentication(t *testing.T) {
-	// TEMPORARY SKIP: Search fails because pages table is empty in test DB
-	// TODO: Add test data to pages table in setupTestServer()
 	t.Skip("FIXME: Need to populate pages table with test data")
 
 	server := setupTestServer(t)
 	defer server.Close()
 
-	// Test unauthenticated search
 	resp, err := http.Get(server.URL + "/api/search?q=test")
 	if err != nil {
 		t.Fatalf("Failed to make request: %v", err)
@@ -298,36 +278,30 @@ func TestAPISearchAuthentication(t *testing.T) {
 		}
 	}()
 
-	// Should return results (search doesn't require auth in current implementation)
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
-	// Verify response is valid JSON
 	var result map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		t.Errorf("Failed to decode JSON response: %v", err)
 	}
 
-	// Verify search_results key exists
 	if _, ok := result["search_results"]; !ok {
 		t.Error("Expected 'search_results' key in response")
 	}
 }
 
-// TestAPILogout tests logout flow
 func TestAPILogout(t *testing.T) {
 	server := setupTestServer(t)
 	defer server.Close()
 
-	// Create and login a user first
 	form := url.Values{}
 	form.Add("username", "logouttest")
 	form.Add("email", "logouttest@example.com")
 	form.Add("password", "password123")
 	form.Add("password2", "password123")
 
-	// Register
 	resp, err := http.Post(
 		server.URL+"/api/register",
 		"application/x-www-form-urlencoded",
@@ -340,14 +314,13 @@ func TestAPILogout(t *testing.T) {
 		t.Logf("Failed to close response body: %v", err)
 	}
 
-	// Login
 	loginForm := url.Values{}
 	loginForm.Add("username", "logouttest")
 	loginForm.Add("password", "password123")
 
 	client := &http.Client{
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse // Don't follow redirects
+			return http.ErrUseLastResponse
 		},
 	}
 
@@ -360,13 +333,11 @@ func TestAPILogout(t *testing.T) {
 		t.Fatalf("Failed to login: %v", err)
 	}
 
-	// Extract session cookie
 	cookies := resp.Cookies()
 	if err := resp.Body.Close(); err != nil {
 		t.Logf("Failed to close response body: %v", err)
 	}
 
-	// Make logout request with session cookie
 	req, err := http.NewRequest("GET", server.URL+"/api/logout", nil)
 	if err != nil {
 		t.Fatalf("Failed to create request: %v", err)
@@ -386,22 +357,17 @@ func TestAPILogout(t *testing.T) {
 		}
 	}()
 
-	// Should redirect to homepage
 	if resp.StatusCode != http.StatusFound {
 		t.Errorf("Expected redirect (302), got %d", resp.StatusCode)
 	}
 
-	// Verify Location header
 	location := resp.Header.Get("Location")
 	if location != "/" {
 		t.Errorf("Expected redirect to '/', got '%s'", location)
 	}
 }
 
-// TestIntegrationFlow tests complete user journey
 func TestIntegrationFlow(t *testing.T) {
-	// TEMPORARY SKIP: Search step fails because pages table is empty
-	// TODO: Add test data to pages table in setupTestServer()
 	t.Skip("FIXME: Need to populate pages table with test data")
 
 	server := setupTestServer(t)
@@ -413,7 +379,6 @@ func TestIntegrationFlow(t *testing.T) {
 		},
 	}
 
-	// Step 1: Register new user
 	t.Log("Step 1: Registering user...")
 	registerForm := url.Values{}
 	registerForm.Add("username", "flowtest")
@@ -436,7 +401,6 @@ func TestIntegrationFlow(t *testing.T) {
 		t.Logf("Failed to close response body: %v", err)
 	}
 
-	// Step 2: Login
 	t.Log("Step 2: Logging in...")
 	loginForm := url.Values{}
 	loginForm.Add("username", "flowtest")
@@ -454,13 +418,11 @@ func TestIntegrationFlow(t *testing.T) {
 		t.Fatalf("Expected redirect after login, got %d", resp.StatusCode)
 	}
 
-	// Save session cookie
 	cookies := resp.Cookies()
 	if err := resp.Body.Close(); err != nil {
 		t.Logf("Failed to close response body: %v", err)
 	}
 
-	// Step 3: Make authenticated search
 	t.Log("Step 3: Making search request...")
 	req, _ := http.NewRequest("GET", server.URL+"/api/search?q=test", nil)
 	for _, cookie := range cookies {
@@ -478,7 +440,6 @@ func TestIntegrationFlow(t *testing.T) {
 		t.Logf("Failed to close response body: %v", err)
 	}
 
-	// Step 4: Logout
 	t.Log("Step 4: Logging out...")
 	req, _ = http.NewRequest("GET", server.URL+"/api/logout", nil)
 	for _, cookie := range cookies {
