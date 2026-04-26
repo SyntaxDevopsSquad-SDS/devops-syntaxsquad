@@ -353,7 +353,7 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	var storedHash string
 	var userID int
-	var forceReset int
+	var forceReset bool
 	err := db.QueryRow(
 		"SELECT id, password, COALESCE(force_password_reset, false) FROM users WHERE username = $1",
 		username,
@@ -383,7 +383,7 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if forceReset == 1 {
+	if forceReset {
 		token, err := generateResetToken(userID)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
