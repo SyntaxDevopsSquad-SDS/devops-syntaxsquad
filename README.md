@@ -14,9 +14,9 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 
 ### Core Functionality
 - **User Authentication:** Registration, login, session management, and password reset
-- **Page Management:** Create, read, and search wiki-style pages (FTS5 full-text search)
+- **Page Management:** Create, read, and search wiki-style pages (PostgreSQL full-text search with `tsvector`)
 - **Security:** CSRF protection, middleware, and breach response tooling
-- **Database:** SQLite with migration support
+- **Database:** PostgreSQL with native full-text search
 
 ### Team Members
 - **CodeByNajib** (NajibGPT)
@@ -30,7 +30,7 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 
 ### Backend
 - **Language:** Go 1.25.0
-- **Database:** SQLite with `modernc.org/sqlite`
+- **Database:** PostgreSQL 16 with `github.com/lib/pq`
 - **Session Management:** Gorilla Sessions
 - **Legacy:** Python Flask (original implementation, kept for reference)
 
@@ -45,8 +45,7 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 
 ### Database Schema
 - **users table:** User authentication and profiles
-- **pages table:** Wiki-style content storage with FTS5 full-text search
-- **Migrations:** SQL migration system (`migrations/`)
+- **pages table:** Wiki-style content storage with `tsvector` full-text search and GIN index
 
 ---
 
@@ -74,16 +73,11 @@ devops-syntaxsquad/
 │   │   │   ├── database_test.go
 │   │   │   ├── integration_test.go
 │   │   │   ├── middleware.go
-│   │   │   ├── migrations.go
 │   │   │   ├── security.go
 │   │   │   └── entrypoint.sh
-│   │   ├── migrations/
-│   │   │   ├── 001_add_fts5.sql
-│   │   │   └── 002_add_password_reset.sql
 │   │   ├── scripts/
 │   │   │   ├── deploy.sh
 │   │   │   ├── deploy_compose.sh
-│   │   │   ├── migration.sh
 │   │   │   ├── setup.sh
 │   │   │   └── breach_response.sh
 │   │   ├── static/
@@ -122,14 +116,25 @@ devops-syntaxsquad/
 
 **Required:**
 - Go 1.25.0 or higher
-- SQLite3
-- Git
 - Docker & Docker Compose
+- Git
 - WSL/Linux environment (for Windows users)
 
 **Optional:**
 - Azure CLI (`az`)
 - Terraform
+
+### Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+POSTGRES_DB=whoknows
+POSTGRES_USER=whoknows
+POSTGRES_PASSWORD=your-password-here
+DATABASE_URL=postgres://whoknows:your-password-here@postgres:5432/whoknows?sslmode=disable
+SECRET_KEY=your-secret-key-here
+```
 
 ### Running with Docker (recommended)
 
@@ -154,17 +159,23 @@ cd devops-syntaxsquad/implementations/go
 go mod download
 ```
 
-3. **Initialize the database:**
+3. **Start PostgreSQL:**
 ```bash
-sqlite3 whoknows.db < schema.sql
+docker compose up postgres -d
 ```
 
-4. **Run the application:**
+4. **Set environment variables:**
 ```bash
-go run main.go
+export DATABASE_URL=postgres://whoknows:whoknows@localhost:5432/whoknows?sslmode=disable
+export SECRET_KEY=your-secret-key-here
 ```
 
-5. **Access the application:**
+5. **Run the application:**
+```bash
+go run ./backend/...
+```
+
+6. **Access the application:**
 Open your browser and navigate to `http://localhost:8080`
 
 ### CSRF Simulation Mode
@@ -214,7 +225,7 @@ increase(whoknows_searches_total{query="fortran"}[1h])
 
 ### Separate Monitoring VM
 
-Prometheus + Grafana can run in a separate repository and on a separate VM.
+Prometheus + Grafana runs on a separate VM for resilience — monitoring data is preserved even if the app server goes down.
 
 On that monitoring VM, configure Prometheus to scrape this app endpoint:
 
@@ -301,11 +312,11 @@ go test -v ./...
 ### Week 6-7: Continuous Delivery ✅ Completed
 - [x] Continuous Delivery pipeline (`cd.yml`)
 - [x] Docker Compose production deployment
-- [x] Database migrations
 - [x] Security hardening (fail2ban, CSRF, middleware)
 - [x] Password reset flow
 
 ### Week 8+: Advanced Topics 🔄 In Progress
+- [x] PostgreSQL migration (from SQLite)
 - [ ] Terraform infrastructure
 - [ ] Monitoring and observability
 - [ ] Performance optimization
@@ -329,6 +340,6 @@ This project is part of EK's DevOps module 2026.
 
 ---
 
-**Course:** DevOps 2026  
-**Institution:** EK København  
+**Course:** DevOps 2026
+**Institution:** EK København
 **Instructor:** Anders Latif
