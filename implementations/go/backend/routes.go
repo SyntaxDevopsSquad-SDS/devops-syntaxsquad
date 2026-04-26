@@ -17,7 +17,6 @@ import (
 ################################################################################
 */
 
-// getSecretKey reads the secret key from SECRET_KEY env variable. Exits if not set.
 func getSecretKey() []byte {
 	key := os.Getenv("SECRET_KEY")
 	if key == "" {
@@ -29,7 +28,6 @@ func getSecretKey() []byte {
 
 var store *sessions.CookieStore
 
-// BaseData contains data shared across all pages
 type BaseData struct {
 	User      string
 	Flash     string
@@ -50,7 +48,6 @@ type Page struct {
 	URL      string
 }
 
-// getSessionUser retrieves the logged-in user from the session cookie.
 func getSessionUser(r *http.Request) string {
 	session, err := store.Get(r, "session")
 	if err != nil {
@@ -63,7 +60,6 @@ func getSessionUser(r *http.Request) string {
 	return user
 }
 
-// setFlash stores a one-time flash message in the session.
 func setFlash(w http.ResponseWriter, r *http.Request, message string) {
 	session, _ := store.Get(r, "session")
 	session.Values["flash"] = message
@@ -74,7 +70,6 @@ func setFlash(w http.ResponseWriter, r *http.Request, message string) {
 	}
 }
 
-// getFlash reads and clears the flash message from the session.
 func getFlash(w http.ResponseWriter, r *http.Request) string {
 	session, err := store.Get(r, "session")
 	if err != nil {
@@ -93,7 +88,6 @@ func getFlash(w http.ResponseWriter, r *http.Request) string {
 	return flash
 }
 
-// generateAndStoreCSRFToken creates a new one-time CSRF token and stores it in the session.
 func generateAndStoreCSRFToken(w http.ResponseWriter, r *http.Request) string {
 	token, err := generateCSRFToken()
 	if err != nil {
@@ -109,7 +103,6 @@ func generateAndStoreCSRFToken(w http.ResponseWriter, r *http.Request) string {
 	return token
 }
 
-// validateCSRFToken checks the submitted token against the session-stored token (one-time use).
 func validateCSRFToken(w http.ResponseWriter, r *http.Request) bool {
 	session, err := store.Get(r, "session")
 	if err != nil {
@@ -129,24 +122,19 @@ func validateCSRFToken(w http.ResponseWriter, r *http.Request) bool {
 	return submittedToken != "" && submittedToken == storedToken
 }
 
-// isCSRFRelaxed returns true if CSRF checks are explicitly relaxed via env var.
-// Intended for controlled simulation/test environments only.
 func isCSRFRelaxed() bool {
 	v := strings.TrimSpace(strings.ToLower(os.Getenv("CSRF_RELAXED")))
 	return v == "1" || v == "true" || v == "yes" || v == "on"
 }
 
-// requireCSRF validates CSRF token, or allows a controlled bypass when CSRF_RELAXED is enabled.
 func requireCSRF(w http.ResponseWriter, r *http.Request, endpoint string) bool {
 	if validateCSRFToken(w, r) {
 		return true
 	}
-
 	if isCSRFRelaxed() {
 		log.Printf("warning: CSRF check bypassed for %s from %s (CSRF_RELAXED enabled)", endpoint, r.RemoteAddr)
 		return true
 	}
-
 	http.Error(w, "Invalid or missing CSRF token", http.StatusForbidden)
 	return false
 }
@@ -176,10 +164,9 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	var searchResults []Page
 
 	if query != "" {
-		// Add wildcard to allow partial matching (e.g., "f" matches "Fortran")
-		searchQuery := strings.TrimSpace(query) + "*"
+		searchQuery := strings.TrimSpace(query) + ":*"
 		rows, err := db.Query(
-			"SELECT p.title, p.content, p.language, p.url FROM pages_fts f JOIN pages p ON f.rowid = p.id WHERE f.language = ? AND pages_fts MATCH ?",
+			"SELECT title, content, language, url FROM pages WHERE language = $1 AND search_vector @@ to_tsquery('english', $2)",
 			language, searchQuery,
 		)
 		if err != nil {
@@ -261,7 +248,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// logoutHandler handles /logout (HTML route) and delegates to apiLogoutHandler
 func logoutHandler(w http.ResponseWriter, r *http.Request) {
 	apiLogoutHandler(w, r)
 }
@@ -303,10 +289,9 @@ func apiSearchHandler(w http.ResponseWriter, r *http.Request) {
 	var searchResults []Page
 
 	if query != "" {
-		// Add wildcard to allow partial matching (e.g., "f" matches "Fortran")
-		searchQuery := strings.TrimSpace(query) + "*"
+		searchQuery := strings.TrimSpace(query) + ":*"
 		rows, err := db.Query(
-			"SELECT p.title, p.content, p.language, p.url FROM pages_fts f JOIN pages p ON f.rowid = p.id WHERE f.language = ? AND pages_fts MATCH ?",
+			"SELECT title, content, language, url FROM pages WHERE language = $1 AND search_vector @@ to_tsquery('english', $2)",
 			language, searchQuery,
 		)
 		if err != nil {
@@ -369,7 +354,10 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 	var storedHash string
 	var userID int
 	var forceReset int
-	err := db.QueryRow("SELECT id, password, COALESCE(force_password_reset, 0) FROM users WHERE username = ?", username).Scan(&userID, &storedHash, &forceReset)
+	err := db.QueryRow(
+		"SELECT id, password, COALESCE(force_password_reset, false) FROM users WHERE username = $1",
+		username,
+	).Scan(&userID, &storedHash, &forceReset)
 	if err != nil {
 		tmpl, _ := parseTemplates("layout.html", "login.html")
 		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Invalid username or password"}); err != nil {
@@ -379,12 +367,10 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !verifyPassword(storedHash, password) {
-		// Fallback: check if stored hash is legacy MD5
 		if isMD5Hash(storedHash) && md5Hash(password) == storedHash {
-			// Upgrade to bcrypt
 			newHash, err := hashPassword(password)
 			if err == nil {
-				if _, err := db.Exec("UPDATE users SET password = ? WHERE username = ?", newHash, username); err != nil {
+				if _, err := db.Exec("UPDATE users SET password = $1 WHERE username = $2", newHash, username); err != nil {
 					log.Printf("error updating password: %v", err)
 				}
 			}
@@ -397,7 +383,6 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// If forced password reset, generate token and redirect
 	if forceReset == 1 {
 		token, err := generateResetToken(userID)
 		if err != nil {
@@ -479,7 +464,7 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var exists int
-	if err := db.QueryRow("SELECT COUNT(*) FROM users WHERE username = ?", username).Scan(&exists); err != nil {
+	if err := db.QueryRow("SELECT COUNT(*) FROM users WHERE username = $1", username).Scan(&exists); err != nil {
 		log.Printf("error checking username existence: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
@@ -500,8 +485,10 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.Exec("INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
-		username, email, hashedPassword)
+	_, err = db.Exec(
+		"INSERT INTO users (username, email, password) VALUES ($1, $2, $3)",
+		username, email, hashedPassword,
+	)
 	if err != nil {
 		fmt.Println("Register error:", err)
 		tmpl, _ := parseTemplates("layout.html", "register.html")
@@ -510,6 +497,7 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
 	session, _ := store.Get(r, "session")
 	session.Values["user"] = username
 	if err := session.Save(r, w); err != nil {
@@ -582,7 +570,10 @@ func apiResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.Exec("UPDATE users SET password = ?, force_password_reset = 0 WHERE id = ?", hashedPassword, userID)
+	_, err = db.Exec(
+		"UPDATE users SET password = $1, force_password_reset = false WHERE id = $2",
+		hashedPassword, userID,
+	)
 	if err != nil {
 		log.Printf("error updating password: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -593,7 +584,6 @@ func apiResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/login", http.StatusFound)
 }
 
-// apiLogoutHandler handles /api/logout (API endpoint)
 func apiLogoutHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, "session")
 	delete(session.Values, "user")
