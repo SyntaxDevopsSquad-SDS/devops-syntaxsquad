@@ -14,7 +14,9 @@ func setupTestDB(t *testing.T) {
 		_ = db.Close()
 	}
 
-	os.Setenv("DATABASE_URL", "postgres://whoknows:whoknows@localhost:5432/whoknows_test?sslmode=disable")
+	if err := os.Setenv("DATABASE_URL", "postgres://whoknows:whoknows@localhost:5432/whoknows_test?sslmode=disable"); err != nil {
+		t.Fatalf("Failed to set DATABASE_URL: %v", err)
+	}
 	connectDB()
 
 	t.Cleanup(func() {
@@ -93,15 +95,21 @@ func TestQueryDB(t *testing.T) {
 }
 
 func TestGetDatabaseURL(t *testing.T) {
-	os.Unsetenv("DATABASE_URL")
+	if err := os.Unsetenv("DATABASE_URL"); err != nil {
+		t.Fatalf("Failed to unset DATABASE_URL: %v", err)
+	}
 	expected := "postgres://whoknows:whoknows@localhost:5432/whoknows?sslmode=disable"
 	if url := getDatabaseURL(); url != expected {
 		t.Errorf("Expected default URL %s, got %s", expected, url)
 	}
 
 	customURL := "postgres://user:pass@myhost:5432/mydb?sslmode=disable"
-	os.Setenv("DATABASE_URL", customURL)
-	defer os.Unsetenv("DATABASE_URL")
+	if err := os.Setenv("DATABASE_URL", customURL); err != nil {
+		t.Fatalf("Failed to set DATABASE_URL: %v", err)
+	}
+	defer func() {
+		_ = os.Unsetenv("DATABASE_URL")
+	}()
 
 	if url := getDatabaseURL(); url != customURL {
 		t.Errorf("Expected custom URL %s, got %s", customURL, url)
