@@ -71,16 +71,23 @@ func TestCSRFLogic(t *testing.T) {
 func TestAPILoginHandler(t *testing.T) {
 	setupRoutesTest()
 	setupTestDB(t)
+
 	// Do NOT defer db.Close() here to keep DB alive for other tests
 
 	// Ensure the temporary table matches what the handler expects
-	_, _ = db.Exec("ALTER TABLE users ADD COLUMN force_password_reset INTEGER DEFAULT 0")
+	_, err := db.Exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS force_password_reset BOOLEAN DEFAULT FALSE")
+	if err != nil {
+		t.Fatalf("failed to add force_password_reset column: %v", err)
+	}
 
 	// Pre-create a user for the tests
 	password := "testpass123"
 	hash, _ := hashPassword(password)
-	_, _ = db.Exec("INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
+	_, err = db.Exec("INSERT INTO users (username, email, password) VALUES ($1, $2, $3)",
 		"testuser", "test@test.com", hash)
+	if err != nil {
+		t.Fatalf("failed to insert test user: %v", err)
+	}
 
 	t.Run("Successful Login", func(t *testing.T) {
 		w := httptest.NewRecorder()
@@ -120,7 +127,6 @@ func TestAPILoginHandler(t *testing.T) {
 
 		apiLoginHandler(w, rPost)
 
-		// On failure, it should return 200 OK (re-rendering the login page) instead of a redirect
 		if w.Code == http.StatusFound {
 			t.Error("Expected login to fail for wrong password, but got a redirect")
 		}

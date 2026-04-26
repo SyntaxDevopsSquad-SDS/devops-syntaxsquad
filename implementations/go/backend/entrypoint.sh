@@ -1,14 +1,12 @@
 #!/bin/sh
 set -e
 
-if [ -z "$DB_PATH" ]; then
-    DB_PATH="/data/whoknows.db"
-fi
+echo "Waiting for PostgreSQL to be ready..."
+until pg_isready -h "$(echo $DATABASE_URL | sed 's|.*@\([^:]*\).*|\1|')" -U "$(echo $DATABASE_URL | sed 's|.*://\([^:]*\).*|\1|')"; do
+  sleep 1
+done
 
-if [ ! -f "$DB_PATH" ]; then
-    echo "Initializing database at $DB_PATH"
-    mkdir -p "$(dirname "$DB_PATH")"
-    sqlite3 "$DB_PATH" < /app/schema.sql
-fi
+echo "Running schema..."
+psql "$DATABASE_URL" -f /app/schema.sql
 
 exec /app/backend/whoknows

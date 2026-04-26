@@ -1,12 +1,30 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - /opt/whoknows/postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   whoknows:
     image: ${IMAGE_NAME}:${IMAGE_TAG:-latest}
     restart: unless-stopped
     env_file:
       - .env
     environment:
-      DB_PATH: /data/whoknows.db
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
     ports:
       - "8080:8080"
-    volumes:
-      - /opt/whoknows/implementations/go/backend:/data
+    depends_on:
+      postgres:
+        condition: service_healthy

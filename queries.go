@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/lib/pq" // ← skift fra modernc.org/sqlite
 )
 
 type Page struct {
@@ -16,9 +17,14 @@ type Page struct {
 }
 
 func main() {
-	db, err := sql.Open("sqlite", "whoknows.db")
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		dsn = "postgres://whoknows:whoknows@localhost:5432/whoknows?sslmode=disable"
+	}
+
+	db, err := sql.Open("postgres", dsn) // ← "sqlite" → "postgres"
 	if err != nil {
-		log.Fatalf("Failed to open database: %v", err)
+		log.Fatal(err)
 	}
 	defer db.Close()
 
@@ -61,12 +67,11 @@ func main() {
 }
 
 func InsertUserQuery(db *sql.DB) (int64, error) {
-	query := "INSERT INTO users (username, email, password) values ('johndoe', 'john@example.com', '5f4dcc3b5aa765d61d8327deb882cf99')"
-	res, err := db.Exec(query)
-	if err != nil {
-		return 0, err
-	}
-	lastID, err := res.LastInsertId()
+	query := `INSERT INTO users (username, email, password) 
+              VALUES ('johndoe', 'john@example.com', '5f4dcc3b5aa765d61d8327deb882cf99')
+              RETURNING id` // ← PostgreSQL-måden
+	var lastID int64
+	err := db.QueryRow(query).Scan(&lastID)
 	if err != nil {
 		return 0, err
 	}

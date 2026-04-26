@@ -16,7 +16,7 @@ RUN cd backend && go build -o /out/whoknows .
 FROM debian:bookworm-slim
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends sqlite3 ca-certificates \
+    && apt-get install -y --no-install-recommends ca-certificates postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app/backend
@@ -30,7 +30,6 @@ COPY implementations/go/backend/entrypoint.sh /app/entrypoint.sh
 
 RUN chmod +x /app/entrypoint.sh
 
-ENV DB_PATH=/data/whoknows.db
 
 EXPOSE 8080
 

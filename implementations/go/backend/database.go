@@ -3,56 +3,34 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
-	_ "modernc.org/sqlite"
 	"os"
+
+	_ "github.com/lib/pq"
 )
 
-// dbPath reads the database path from the DB_PATH environment variable,
-// falling back to "whoknows.db" if not set.
-func getDBPath() string {
-	if path := os.Getenv("DB_PATH"); path != "" {
-		return path
-	}
-	return "whoknows.db"
-}
-
-// Global db variabel - kan bruges i alle filer
 var db *sql.DB
 
-func checkDBExists() bool {
-	if _, err := os.Stat(getDBPath()); os.IsNotExist(err) {
-		return false
+func getDatabaseURL() string {
+	if url := os.Getenv("DATABASE_URL"); url != "" {
+		return url
 	}
-	return true
+	return "postgres://whoknows:whoknows@localhost:5432/whoknows?sslmode=disable"
 }
 
-// connectDB initiates a connection, checks for file existence, and pings the database.
 func connectDB() {
-	dbPath := getDBPath()
-
-	// Skip file check for in-memory database
-	if dbPath != ":memory:" && !checkDBExists() {
-		fmt.Printf("Critical Error: Database file not found at %s\n", dbPath)
-		os.Exit(1)
-	}
-
 	var err error
-	db, err = sql.Open("sqlite", getDBPath())
+	db, err = sql.Open("postgres", getDatabaseURL())
 	if err != nil {
 		fmt.Printf("could not open database: %v\n", err)
 		os.Exit(1)
 	}
-
 	if err = db.Ping(); err != nil {
 		fmt.Printf("database ping failed: %v\n", err)
 		os.Exit(1)
 	}
-
-	fmt.Println("Connection Status: Successfully connected to", getDBPath())
+	fmt.Println("Connection Status: Successfully connected to PostgreSQL")
 }
 
-// QueryDB executes a query and returns results as a slice of maps
 func QueryDB(query string, args []interface{}, one bool) (interface{}, error) {
 	rows, err := db.Query(query, args...)
 	if err != nil {
@@ -60,7 +38,7 @@ func QueryDB(query string, args []interface{}, one bool) (interface{}, error) {
 	}
 	defer func() {
 		if err := rows.Close(); err != nil {
-			log.Printf("error closing rows: %v", err)
+			fmt.Printf("error closing rows: %v\n", err)
 		}
 	}()
 
@@ -70,18 +48,15 @@ func QueryDB(query string, args []interface{}, one bool) (interface{}, error) {
 	}
 
 	var results []map[string]interface{}
-
 	for rows.Next() {
 		values := make([]interface{}, len(columns))
 		valuePtrs := make([]interface{}, len(columns))
 		for i := range columns {
 			valuePtrs[i] = &values[i]
 		}
-
 		if err := rows.Scan(valuePtrs...); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
-
 		rowMap := make(map[string]interface{})
 		for i, col := range columns {
 			val := values[i]
@@ -91,7 +66,6 @@ func QueryDB(query string, args []interface{}, one bool) (interface{}, error) {
 				rowMap[col] = val
 			}
 		}
-
 		results = append(results, rowMap)
 	}
 
@@ -105,6 +79,5 @@ func QueryDB(query string, args []interface{}, one bool) (interface{}, error) {
 		}
 		return nil, nil
 	}
-
 	return results, nil
 }

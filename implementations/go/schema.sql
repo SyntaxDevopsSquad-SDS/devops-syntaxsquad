@@ -1,68 +1,60 @@
--- Initial database schema (only runs if DB doesn't exist)
+-- Initial database schema for PostgreSQL
+
 CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  username TEXT NOT NULL UNIQUE,
-  email TEXT NOT NULL UNIQUE,
-  password TEXT NOT NULL,
-  force_password_reset BOOLEAN DEFAULT 0,
-  password_reset_required_at TIMESTAMP
+    id                        SERIAL PRIMARY KEY,
+    username                  TEXT NOT NULL UNIQUE,
+    email                     TEXT NOT NULL UNIQUE,
+    password                  TEXT NOT NULL,
+    force_password_reset      BOOLEAN DEFAULT FALSE,
+    password_reset_required_at TIMESTAMP
 );
 
-INSERT OR IGNORE INTO users (username, email, password)
-    VALUES ('admin', 'admin@whoknows.com', '$2a$10$v/spwONyDHojGbiU6V36BOcKJ/bSt9kO2pl41JJ/CMo0ZcruhWwvq');
+INSERT INTO users (username, email, password)
+VALUES ('admin', 'admin@whoknows.com', '$2a$10$v/spwONyDHojGbiU6V36BOcKJ/bSt9kO2pl41JJ/CMo0ZcruhWwvq')
+ON CONFLICT DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    token TEXT NOT NULL UNIQUE,
+    id         SERIAL PRIMARY KEY,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token      TEXT NOT NULL UNIQUE,
     expires_at TIMESTAMP NOT NULL,
-    used_at TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    used_at    TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_reset_tokens_user_id ON password_reset_tokens(user_id);
 CREATE INDEX IF NOT EXISTS idx_reset_tokens_token ON password_reset_tokens(token);
 
 CREATE TABLE IF NOT EXISTS pages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL UNIQUE,
-    url TEXT NOT NULL UNIQUE,
-    language TEXT NOT NULL DEFAULT 'en' CHECK(language IN ('en', 'da')),
+    id           SERIAL PRIMARY KEY,
+    title        TEXT NOT NULL UNIQUE,
+    url          TEXT NOT NULL UNIQUE,
+    language     TEXT NOT NULL DEFAULT 'en' CHECK(language IN ('en', 'da')),
     last_updated TIMESTAMP,
-    content TEXT NOT NULL
+    content      TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_pages_language ON pages(language);
 
-CREATE VIRTUAL TABLE IF NOT EXISTS pages_fts USING fts5(
-    title,
-    content,
-    language UNINDEXED,
-    url UNINDEXED,
-    content='pages',
-    content_rowid='id'
-);
+-- PostgreSQL fulltekst-søgning med tsvector
+ALTER TABLE pages ADD COLUMN IF NOT EXISTS search_vector tsvector;
 
-CREATE TRIGGER pages_ai AFTER INSERT ON pages BEGIN
-    INSERT INTO pages_fts(rowid, title, content, language, url)
-    VALUES (new.id, new.title, new.content, new.language, new.url);
+CREATE INDEX IF NOT EXISTS idx_pages_search_vector ON pages USING GIN(search_vector);
+
+CREATE OR REPLACE FUNCTION pages_search_vector_update() RETURNS trigger AS $$
+BEGIN
+    NEW.search_vector := to_tsvector('english', NEW.title || ' ' || NEW.content);
+    RETURN NEW;
 END;
+$$ LANGUAGE plpgsql;
 
-CREATE TRIGGER pages_ad AFTER DELETE ON pages BEGIN
-    INSERT INTO pages_fts(pages_fts, rowid, title, content, language, url)
-    VALUES ('delete', old.id, old.title, old.content, old.language, old.url);
-END;
+CREATE OR REPLACE TRIGGER pages_search_vector_trigger
+    BEFORE INSERT OR UPDATE ON pages
+    FOR EACH ROW EXECUTE FUNCTION pages_search_vector_update();
 
-CREATE TRIGGER pages_au AFTER UPDATE ON pages BEGIN
-    INSERT INTO pages_fts(pages_fts, rowid, title, content, language, url)
-    VALUES ('delete', old.id, old.title, old.content, old.language, old.url);
-    INSERT INTO pages_fts(rowid, title, content, language, url)
-    VALUES (new.id, new.title, new.content, new.language, new.url);
-END;
-
-INSERT OR IGNORE INTO pages (title, url, language, content) VALUES
+INSERT INTO pages (title, url, language, content) VALUES
 ('Fortran',    'http://web.archive.org/web/20081220110619/http://en.wikipedia.org:80/wiki/Fortran',    'en', 'Fortran'),
 ('Algorithm',  'http://web.archive.org/web/20081217070911/http://en.wikipedia.org:80/wiki/Algorithm',  'en', 'Algorithm'),
 ('MATLAB',     'http://web.archive.org/web/20090110165251/http://en.wikipedia.org:80/wiki/Matlab',     'en', 'MATLAB'),
 ('JavaScript', 'http://web.archive.org/web/20081218123622/http://en.wikipedia.org:80/wiki/Javascript', 'en', 'JavaScript'),
-('Database',   'http://web.archive.org/web/20081219060743/http://en.wikipedia.org:80/wiki/Database',   'en', 'Database');
+('Database',   'http://web.archive.org/web/20081219060743/http://en.wikipedia.org:80/wiki/Database',   'en', 'Database')
+ON CONFLICT DO NOTHING;
