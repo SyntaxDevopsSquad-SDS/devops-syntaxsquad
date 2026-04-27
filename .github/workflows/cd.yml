@@ -62,7 +62,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: docker-compose.prod.yml,implementations/go/scripts/deploy_compose.sh
-          target: /tmp/whoknows-deploy
+          target: /opt/whoknows-deploy
           overwrite: true
 
       - name: Deploy with Docker Compose on VM
@@ -77,8 +77,8 @@ jobs:
             sudo mkdir -p /opt/whoknows
             sudo mkdir -p /opt/whoknows/implementations/go/scripts
 
-            sudo cp -f /tmp/whoknows-deploy/docker-compose.prod.yml /opt/whoknows/docker-compose.prod.yml
-            sudo cp -f /tmp/whoknows-deploy/implementations/go/scripts/deploy_compose.sh /opt/whoknows/implementations/go/scripts/deploy_compose.sh
+            sudo cp -f /opt/whoknows-deploy/docker-compose.prod.yml /opt/whoknows/docker-compose.prod.yml
+            sudo cp -f /opt/whoknows-deploy/implementations/go/scripts/deploy_compose.sh /opt/whoknows/implementations/go/scripts/deploy_compose.sh
 
             cd /opt/whoknows
             sudo mv -f docker-compose.prod.yml docker-compose.yml
@@ -91,5 +91,6 @@ jobs:
             bash /opt/whoknows/implementations/go/scripts/deploy_compose.sh \
               "${{ needs.build-and-push.outputs.image_name }}" \
               "${{ github.sha }}"
-
+            echo "=== Restarting nginx to refresh DNS ==="
+            sudo docker restart tls-nginx-1
             sudo docker image prune -f
