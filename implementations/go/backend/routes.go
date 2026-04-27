@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/sessions"
@@ -164,11 +165,20 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 	var searchResults []Page
 
 	if query != "" {
-		searchQuery := strings.TrimSpace(query) + ":*"
-		rows, err := db.Query(
-			"SELECT title, content, language, url FROM pages WHERE language = $1 AND search_vector @@ to_tsquery('english', $2)",
-			language, searchQuery,
-		)
+		searchQuery := strings.TrimSpace(query)
+		var rows *sql.Rows
+		var err error
+		if len(searchQuery) <= 2 {
+			rows, err = db.Query(
+				"SELECT title, content, language, url FROM pages WHERE language = $1 AND (LOWER(title) LIKE LOWER($2) OR LOWER(content) LIKE LOWER($2))",
+				language, "%"+searchQuery+"%",
+			)
+		} else {
+			rows, err = db.Query(
+				"SELECT title, content, language, url FROM pages WHERE language = $1 AND search_vector @@ to_tsquery('english', $2)",
+				language, searchQuery+":*",
+			)
+		}
 		if err != nil {
 			recordSearch("web", language, query, true)
 			http.Error(w, "Database error", http.StatusInternalServerError)
@@ -289,11 +299,20 @@ func apiSearchHandler(w http.ResponseWriter, r *http.Request) {
 	var searchResults []Page
 
 	if query != "" {
-		searchQuery := strings.TrimSpace(query) + ":*"
-		rows, err := db.Query(
-			"SELECT title, content, language, url FROM pages WHERE language = $1 AND search_vector @@ to_tsquery('english', $2)",
-			language, searchQuery,
-		)
+		searchQuery := strings.TrimSpace(query)
+		var rows *sql.Rows
+		var err error
+		if len(searchQuery) <= 2 {
+			rows, err = db.Query(
+				"SELECT title, content, language, url FROM pages WHERE language = $1 AND (LOWER(title) LIKE LOWER($2) OR LOWER(content) LIKE LOWER($2))",
+				language, "%"+searchQuery+"%",
+			)
+		} else {
+			rows, err = db.Query(
+				"SELECT title, content, language, url FROM pages WHERE language = $1 AND search_vector @@ to_tsquery('english', $2)",
+				language, searchQuery+":*",
+			)
+		}
 		if err != nil {
 			recordSearch("api", language, query, true)
 			http.Error(w, "Database error", http.StatusInternalServerError)
