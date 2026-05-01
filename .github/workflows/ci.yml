@@ -68,11 +68,16 @@ jobs:
 
 
 
-      - name: SonarCloud Scan
+     - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         with:
-          # forces scanner to use root dir where the prop file is defined
+          # Vi fortæller den præcis, hvad den skal bruge, så den ikke behøver lede efter filen
           projectBaseDir: .
+          args: >
+            -Dsonar.projectKey=SyntaxDevopsSquad-SDS_devops-syntaxsquad
+            -Dsonar.organization=syntaxdevopssquad-sds
+            -Dsonar.sources=.
+            -Dsonar.exclusions=**/*_test.go
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
