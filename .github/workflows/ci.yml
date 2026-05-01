@@ -57,7 +57,7 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v2.1.6
+          version: v2.10.0
           working-directory: implementations/go
           args: --timeout=5m ./backend/...
       - name: Build Go application
