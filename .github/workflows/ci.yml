@@ -54,11 +54,12 @@ jobs:
             gofmt -s -l backend
             exit 1
           fi
-      - name: Install golangci-lint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin latest
       - name: Run golangci-lint
-        run: $(go env GOPATH)/bin/golangci-lint run ./backend/... --timeout=5m
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.10.0
+          working-directory: implementations/go
+          args: --timeout=5m ./backend/...
       - name: Build Go application
         run: go build -v -o whoknows-server ./backend/...
       - name: Run Go tests
@@ -69,7 +70,7 @@ jobs:
 
       - name: SonarCloud Scan
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarqube-scan-action@v5
         with:
           projectBaseDir: .
           args: >
@@ -80,8 +81,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-    
-
 
   database-validation:
     name: Database Schema Validation
