@@ -69,7 +69,7 @@ jobs:
 
       - name: SonarCloud Scan
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: SonarSource/sonarcloud-github-action@master
+	uses: SonarSource/sonarqube-scan-action@v5
         with:
           projectBaseDir: .
           args: >
