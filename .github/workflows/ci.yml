@@ -68,6 +68,7 @@ jobs:
         run: go tool cover -func=coverage.out
 
       - name: SonarCloud Scan
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: SonarSource/sonarcloud-github-action@master
         with:
           projectBaseDir: .
