@@ -7,12 +7,12 @@ COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 IMAGE_NAME="${1:-${IMAGE_NAME:-}}"
 IMAGE_TAG="${2:-${IMAGE_TAG:-latest}}"
 
-if [ -z "$IMAGE_NAME" ]; then
+if [[ -z "$IMAGE_NAME" ]]; then
     echo "Usage: bash implementations/go/scripts/deploy_compose.sh <IMAGE_NAME> [IMAGE_TAG]"
     exit 1
 fi
 
-if [ ! -d "$APP_DIR" ]; then
+if [[ ! -d "$APP_DIR" ]]; then
     echo "Missing app dir: $APP_DIR"
     exit 1
 fi
@@ -22,7 +22,7 @@ if ! sudo test -f "$COMPOSE_FILE"; then
     exit 1
 fi
 
-if [ -n "${GHCR_USER:-}" ] && [ -n "${GHCR_PAT:-}" ]; then
+if [[ -n "${GHCR_USER:-}" ]] && [[ -n "${GHCR_PAT:-}" ]]; then
     echo "Logging in to GHCR..."
     echo "$GHCR_PAT" | sudo docker login ghcr.io -u "$GHCR_USER" --password-stdin
 fi

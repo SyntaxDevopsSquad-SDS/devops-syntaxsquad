@@ -28,13 +28,13 @@ echo "Tryk ENTER når du har tilføjet nøglen til GitHub..."
 read
 
 echo "=== Cloning repository ==="
-if [ -d "/opt/whoknows" ]; then
+if [[ -d "/opt/whoknows" ]]; then
     echo "Eksisterende mappe fundet - sletter..."
     sudo rm -rf /opt/whoknows
 fi
 GIT_SSH_COMMAND="ssh -i ~/.ssh/github_key" git clone git@github.com:SyntaxDevopsSquad-SDS/devops-syntaxsquad.git /opt/whoknows
 
-if [ $? -ne 0 ]; then
+if [[ $? -ne 0 ]]; then
     echo "❌ Git clone fejlede - afbryder"
     exit 1
 fi
@@ -52,7 +52,7 @@ echo "=== Creating database from schema.sql ==="
 cd /opt/whoknows/implementations/go/backend
 sqlite3 whoknows.db < ../schema.sql
 
-if [ $? -ne 0 ]; then
+if [[ $? -ne 0 ]]; then
     echo "❌ Database oprettelse fejlede"
     exit 1
 fi
@@ -72,7 +72,7 @@ echo "=== Building Go app ==="
 cd /opt/whoknows/implementations/go/backend
 go build -o whoknows .
 
-if [ $? -ne 0 ]; then
+if [[ $? -ne 0 ]]; then
     echo "❌ Build fejlede - Python app kører stadig!"
     sudo swapoff /swapfile
     sudo rm /swapfile
@@ -87,7 +87,7 @@ echo "=== Enter a strong SECRET_KEY for session encryption ==="
 read -rsp "SECRET_KEY: " SECRET_KEY
 echo ""
 
-if [ -z "$SECRET_KEY" ]; then
+if [[ -z "$SECRET_KEY" ]]; then
     echo "❌ SECRET_KEY cannot be empty"
     exit 1
 fi

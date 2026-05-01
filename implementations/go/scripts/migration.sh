@@ -17,7 +17,7 @@ rollback() {
     echo ""
     echo "Migration failed. Attempting rollback..."
 
-    if [ "$SYSTEMD_STOPPED" -eq 1 ]; then
+    if [[ "$SYSTEMD_STOPPED" -eq 1 ]]; then
         sudo systemctl start "$SERVICE_NAME" || true
         sudo systemctl status "$SERVICE_NAME" --no-pager || true
     fi
@@ -93,7 +93,7 @@ ensure_docker() {
 }
 
 login_ghcr_if_configured() {
-    if [ -n "${GHCR_USER:-}" ] && [ -n "${GHCR_PAT:-}" ]; then
+    if [[ -n "${GHCR_USER:-}" ]] && [[ -n "${GHCR_PAT:-}" ]]; then
         echo "Logging in to GHCR..."
         echo "$GHCR_PAT" | sudo docker login ghcr.io -u "$GHCR_USER" --password-stdin
     else
@@ -112,7 +112,7 @@ ensure_port_8080_available() {
 
     echo "Port 8080 is in use. Attempting to stop Docker containers publishing 8080..."
     CONTAINERS="$(sudo docker ps --filter publish=8080 --format '{{.ID}}')"
-    if [ -n "$CONTAINERS" ]; then
+    if [[ -n "$CONTAINERS" ]]; then
         sudo docker stop $CONTAINERS
         sudo docker rm $CONTAINERS || true
     fi
@@ -120,7 +120,7 @@ ensure_port_8080_available() {
     if is_port_8080_in_use; then
         echo "Port 8080 still busy. Attempting to stop non-Docker listener processes..."
         PIDS="$(sudo ss -ltnp | grep ':8080 ' | grep -o 'pid=[0-9]\+' | cut -d= -f2 | sort -u)"
-        if [ -n "$PIDS" ]; then
+        if [[ -n "$PIDS" ]]; then
             sudo kill $PIDS || true
             sleep 2
             if is_port_8080_in_use; then
@@ -139,7 +139,7 @@ ensure_port_8080_available() {
 ensure_root_env() {
     sudo mkdir -p "$APP_DIR"
 
-    if [ ! -f "$ENV_FILE" ]; then
+    if [[ ! -f "$ENV_FILE" ]]; then
         echo "Creating $ENV_FILE with generated SECRET_KEY"
         SECRET_VALUE="$(generate_secret_key)"
         printf "SECRET_KEY=%s\n" "$SECRET_VALUE" | sudo tee "$ENV_FILE" >/dev/null
@@ -163,13 +163,13 @@ ensure_docker_compose
 login_ghcr_if_configured
 ensure_root_env
 
-if [ -z "$IMAGE_NAME" ]; then
+if [[ -z "$IMAGE_NAME" ]]; then
     echo "Usage: bash implementations/go/scripts/migration.sh <IMAGE_NAME> [IMAGE_TAG]"
     echo "Example: bash implementations/go/scripts/migration.sh ghcr.io/syntaxdevopssquad-sds/whoknows-go 0123abcd"
     exit 1
 fi
 
-if [ ! -d "$APP_DIR" ]; then
+if [[ ! -d "$APP_DIR" ]]; then
     echo "App directory not found: $APP_DIR"
     exit 1
 fi

@@ -5,14 +5,13 @@ on:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  packages: write
-
 jobs:
   build-and-push:
     name: Build and Push Image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     outputs:
       image_name: ${{ steps.vars.outputs.image_name }}
 
@@ -49,6 +48,8 @@ jobs:
   deploy:
     name: Deploy on VM
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: build-and-push
 
     steps:

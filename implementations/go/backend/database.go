@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // registers postgres driver via init()
 )
 
 var db *sql.DB

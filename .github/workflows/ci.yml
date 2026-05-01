@@ -4,12 +4,13 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-permissions:
-  contents: read
+
 jobs:
   go-ci:
     name: Go Build & Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: implementations/go
@@ -67,6 +68,7 @@ jobs:
         run: go tool cover -func=coverage.out
 
       - name: SonarCloud Scan
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: SonarSource/sonarcloud-github-action@master
         with:
           projectBaseDir: .
@@ -84,6 +86,8 @@ jobs:
   database-validation:
     name: Database Schema Validation
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     services:
       postgres:
@@ -116,6 +120,8 @@ jobs:
   quality-gate:
     name: Quality Gate
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs: [go-ci, database-validation]
     steps:
       - name: All checks passed
