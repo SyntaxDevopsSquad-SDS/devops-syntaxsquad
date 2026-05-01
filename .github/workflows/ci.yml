@@ -66,12 +66,9 @@ jobs:
         if: success()
         run: go tool cover -func=coverage.out
 
-
-
-     - name: SonarCloud Scan
+      - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         with:
-          # Vi fortæller den præcis, hvad den skal bruge, så den ikke behøver lede efter filen
           projectBaseDir: .
           args: >
             -Dsonar.projectKey=SyntaxDevopsSquad-SDS_devops-syntaxsquad
