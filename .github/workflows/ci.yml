@@ -54,11 +54,12 @@ jobs:
             gofmt -s -l backend
             exit 1
           fi
-      - name: Install golangci-lint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.12.0
       - name: Run golangci-lint
-        run: $(go env GOPATH)/bin/golangci-lint run ./backend/... --timeout=5m
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v2.1.6
+          working-directory: implementations/go
+          args: --timeout=5m ./backend/...
       - name: Build Go application
         run: go build -v -o whoknows-server ./backend/...
       - name: Run Go tests
