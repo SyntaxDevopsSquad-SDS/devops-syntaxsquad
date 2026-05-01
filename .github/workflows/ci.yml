@@ -71,7 +71,7 @@ jobs:
         with:
           projectBaseDir: .
           args: >
-            -Dsonar.projectKey=SyntaxDevopsSquad-SDS_devops-syntaxsquad
+            -Dsonar.projectKey=syntaxdevopssquad-sds_devops-syntaxsquad
             -Dsonar.organization=syntaxdevopssquad-sds
             -Dsonar.sources=.
             -Dsonar.exclusions=**/*_test.go
