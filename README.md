@@ -45,6 +45,8 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 - **Server Security:** fail2ban
 - **Version Control:** Git with Conventional Commits
 - **Development Environment:** WSL (Ubuntu 24.04)
+- **Infrastructure as Code:** Terraform (Azure VM, netværk, firewall)
+- **Configuration Management:** Ansible (Docker, nginx, fail2ban, UFW)
 
 ### Monitoring Stack
 - **Metrics:** Prometheus
@@ -353,8 +355,8 @@ go test -v ./...
 - [x] PostgreSQL migration (from SQLite)
 - [x] Monitoring and observability (Prometheus + Grafana)
 - [x] SonarCloud code quality analysis
-- [ ] Ansible configuration management (in progress)
-- [ ] Terraform infrastructure
+- [x] Ansible configuration management (in progress)
+- [x] Terraform infrastructure
 
 ---
 

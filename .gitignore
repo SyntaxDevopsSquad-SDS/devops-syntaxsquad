@@ -107,3 +107,6 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+
+# Ansible
+terraform/ansible/inventory.ini
