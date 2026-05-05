@@ -14,7 +14,7 @@ provider "azurerm" {
 
 resource "azurerm_resource_group" "whoknows" {
   name     = "whoknows-rg"
-  location = "Switzerland North"
+  location = "Switzerland North" # Needs to be changed to a location that supports the VM size you want to use, e.g. "East US"
 }
 
 resource "azurerm_virtual_network" "whoknows" {
@@ -56,7 +56,7 @@ resource "azurerm_linux_virtual_machine" "whoknows" {
   name                = var.vm_name
   resource_group_name = azurerm_resource_group.whoknows.name
   location            = azurerm_resource_group.whoknows.location
-  size                = "Standard_B2ats_v2"
+  size                = "Standard_B2ats_v2" # Change to a size available in your chosen location, e.g. "Standard_B1s"
   admin_username      = "adminuser"
   network_interface_ids = [
     azurerm_network_interface.whoknows.id,
@@ -77,36 +77,12 @@ resource "azurerm_linux_virtual_machine" "whoknows" {
     username   = "adminuser"
     public_key = file("~/.ssh/id_rsa.pub")
   }
-  provisioner "remote-exec" {
-    inline = split("\n", templatefile("${path.module}/inline_commands.sh", {}))
-
-    connection {
-      type        = "ssh"
-      user        = "adminuser"
-      private_key = file("~/.ssh/id_rsa")
-      host        = self.public_ip_address
-      timeout     = "2m"
-    }
-  }
-
 }
 
 resource "azurerm_network_security_group" "whoknows_nsg" {
   name                = "whoknows-nsg"
   location            = azurerm_resource_group.whoknows.location
   resource_group_name = azurerm_resource_group.whoknows.name
-
-  security_rule {
-    name                       = "allow-8080"
-    priority                   = 100
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "8080"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
 }
 
 resource "azurerm_network_security_rule" "whoknows_ssh_rule" {
@@ -123,6 +99,34 @@ resource "azurerm_network_security_rule" "whoknows_ssh_rule" {
   resource_group_name         = azurerm_resource_group.whoknows.name
 }
 
+resource "azurerm_network_security_rule" "whoknows_8080_rule" {
+  name                        = "allow-8080"
+  priority                    = 100
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "8080"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+  network_security_group_name = azurerm_network_security_group.whoknows_nsg.name
+  resource_group_name         = azurerm_resource_group.whoknows.name
+}
+
+resource "azurerm_network_security_rule" "whoknows_http_rule" {
+  name                        = "HTTP"
+  priority                    = 200
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "80"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+  network_security_group_name = azurerm_network_security_group.whoknows_nsg.name
+  resource_group_name         = azurerm_resource_group.whoknows.name
+}
+
 resource "azurerm_subnet_network_security_group_association" "whoknows_assoc" {
   subnet_id                 = azurerm_subnet.whoknows.id
   network_security_group_id = azurerm_network_security_group.whoknows_nsg.id
@@ -131,4 +135,8 @@ resource "azurerm_subnet_network_security_group_association" "whoknows_assoc" {
 resource "azurerm_network_interface_security_group_association" "whoknows_nic_assoc" {
   network_interface_id      = azurerm_network_interface.whoknows.id
   network_security_group_id = azurerm_network_security_group.whoknows_nsg.id
+}
+resource "local_file" "ansible_inventory" {
+  content  = "[whoknows]\n${azurerm_public_ip.whoknows.ip_address} ansible_user=adminuser ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_common_args='-o StrictHostKeyChecking=no'\n"
+  filename = "${path.module}/ansible/inventory.ini"
 }
