@@ -2,13 +2,14 @@
 
 Welcome to the **SyntaxDevopsSquad** main repository. This project is part of our 2026 DevOps module at EK, focusing on migrating a legacy Python Flask application to Go while learning DevOps practices including automation, CI/CD, and infrastructure as code.
 
-## 🌐 Live Application
+## Live Application
 
-> **URL:** `<!-- (https://www.syntax-reborndev.com/) -->`
+> **App:** [https://www.syntax-reborndev.com/](https://www.syntax-reborndev.com/)
+> **Monitoring:** [https://monitor.syntax-reborndev.com/](https://monitor.syntax-reborndev.com/)
 
 ---
 
-## 📋 Project Overview
+## Project Overview
 
 **WhoKnows** is a web application for searching and managing wiki-style pages with user authentication. We have successfully migrated the application from Python/Flask to Go as part of our DevOps learning journey. Our team of 4 developers has implemented modern DevOps practices including containerization, automated CI/CD pipelines, and cloud deployment.
 
@@ -26,7 +27,7 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 ### Backend
 - **Language:** Go 1.25.0
@@ -39,9 +40,17 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 - **Containerization:** Docker + Docker Compose (dev & prod)
 - **CI/CD:** GitHub Actions (`ci.yml`, `cd.yml`, `dependabot-auto-merge.yml`)
 - **Linting:** `golangci-lint`
+- **Code Quality:** SonarCloud (Automatic Analysis)
+- **Configuration Management:** Ansible
 - **Server Security:** fail2ban
 - **Version Control:** Git with Conventional Commits
 - **Development Environment:** WSL (Ubuntu 24.04)
+
+### Monitoring Stack
+- **Metrics:** Prometheus
+- **Dashboards:** Grafana
+- **Deployment:** Separate monitoring VM for resilience
+- **Repo:** [SyntaxDevopsSquad-SDS/monitoring](https://github.com/SyntaxDevopsSquad-SDS/monitoring)
 
 ### Database Schema
 - **users table:** User authentication and profiles
@@ -49,68 +58,89 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 devops-syntaxsquad/
-├── docker-compose.yml           # Development environment
-├── docker-compose.prod.yml      # Production environment
-├── init_db.go                   # Database initialization
-├── queries.go                   # SQL queries
+├── README.md
+├── docker-compose.yml                   # Development environment
+├── docker-compose.prod.yml              # Production environment
 ├── docs/
-│   ├── BRANCHING_STRATEGY.md    # Git branching documentation
-│   ├── dependency_graph.dot     # System architecture (source)
-│   ├── dependency_graph_picture.svg  # System architecture (visual)
-│   ├── openapi.yaml             # API specification
-│   └── technical_audit.md      # Technical audit report
+│   ├── openapi.yaml                     # API specification
+│   └── mandatory/
+│       ├── BRANCHING_STRATEGY.md        # Git branching documentation
+│       ├── dependency_graph.dot         # System architecture (source)
+│       ├── dependency_graph_picture.svg # System architecture (visual)
+│       ├── mandatory_ii.md              # DevOps refleksion opgave II
+│       ├── monitoring_repo_prompt.md
+│       └── technical_audit.md           # Technical audit report
 ├── implementations/
-│   ├── go/                      # Active Go implementation
+│   ├── go/                              # Active Go implementation
 │   │   ├── Dockerfile
+│   │   ├── go.mod
+│   │   ├── go.sum
+│   │   ├── schema.sql
+│   │   ├── whoknows-server
 │   │   ├── backend/
 │   │   │   ├── main.go
 │   │   │   ├── routes.go
+│   │   │   ├── routes_test.go
 │   │   │   ├── database.go
 │   │   │   ├── database_test.go
 │   │   │   ├── integration_test.go
 │   │   │   ├── middleware.go
+│   │   │   ├── migrations.go
+│   │   │   ├── metrics.go
+│   │   │   ├── metrics_test.go
 │   │   │   ├── security.go
+│   │   │   ├── security_test.go
 │   │   │   └── entrypoint.sh
 │   │   ├── scripts/
 │   │   │   ├── deploy.sh
 │   │   │   ├── deploy_compose.sh
+│   │   │   ├── migration.sh
 │   │   │   ├── setup.sh
 │   │   │   └── breach_response.sh
 │   │   ├── static/
-│   │   │   └── style.css
-│   │   ├── templates/
-│   │   │   ├── layout.html
-│   │   │   ├── search.html
-│   │   │   ├── login.html
-│   │   │   ├── register.html
-│   │   │   ├── reset-password.html
-│   │   │   └── about.html
-│   │   ├── schema.sql
-│   │   ├── go.mod
-│   │   └── go.sum
-│   └── python/                  # Legacy Flask implementation (reference only)
-│       ├── backend/
-│       │   ├── app.py
-│       │   ├── app_tests.py
-│       │   └── requirements.txt
+│   │   │   ├── style.css
+│   │   │   └── monkgroup.png
+│   │   └── templates/
+│   │       ├── layout.html
+│   │       ├── search.html
+│   │       ├── login.html
+│   │       ├── register.html
+│   │       ├── reset-password.html
+│   │       └── about.html
+│   └── python/                          # Legacy Flask implementation (reference only)
+│       ├── Makefile
 │       ├── schema.sql
-│       └── run_forever.sh
+│       ├── run_forever.sh
+│       ├── run_forever_original.sh
+│       └── backend/
+│           ├── app.py
+│           ├── app_tests.py
+│           ├── requirements.txt
+│           └── requirements_python2.txt
+├── terraform/
+│   ├── main.tf
+│   ├── outputs.tf
+│   ├── variables.tf
+│   ├── inline_commands.sh
+│   └── ansible/                         # Ansible configuration
+│       ├── playbook.yml
+│       └── deploy.sh
 ├── server-config/
-│   └── fail2ban-jail.local      # Server security configuration
+│   └── fail2ban-jail.local              # Server security configuration
 └── .github/
     └── workflows/
-        ├── ci.yml               # Continuous Integration
-        ├── cd.yml               # Continuous Deployment
+        ├── ci.yml                       # Continuous Integration
+        ├── cd.yml                       # Continuous Deployment
         └── dependabot-auto-merge.yml
 ```
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -122,7 +152,7 @@ devops-syntaxsquad/
 
 **Optional:**
 - Azure CLI (`az`)
-- Terraform
+- Ansible
 
 ### Environment Variables
 
@@ -193,9 +223,13 @@ CSRF_RELAXED=true
 
 ## Monitoring (Prometheus + Grafana)
 
-The Go backend now exposes a Prometheus endpoint at:
+The Go backend exposes a Prometheus endpoint at:
 
 - `GET /metrics` (same host/port as app, default `:8080`)
+
+Prometheus and Grafana run on a **separate monitoring VM** for resilience - monitoring data is preserved even if the app server goes down.
+
+Live Grafana dashboard: [https://monitor.syntax-reborndev.com/](https://monitor.syntax-reborndev.com/)
 
 ### Available Metrics
 
@@ -204,8 +238,6 @@ The Go backend now exposes a Prometheus endpoint at:
 - `whoknows_login_attempts_total{outcome}` where `outcome` is `success|failure`
 - `whoknows_registrations_total{outcome}` where `outcome` is `success|validation_error|failure`
 - `whoknows_searches_total{source,language,query,outcome}` where `source` is `web|api` and `outcome` is `success|failure`
-
-`whoknows_searches_total` lets you chart searches for specific terms via the `query` label.
 
 ### Prometheus Query Examples
 
@@ -223,11 +255,9 @@ increase(whoknows_registrations_total{outcome="success"}[1h])
 increase(whoknows_searches_total{query="fortran"}[1h])
 ```
 
-### Separate Monitoring VM
+### Prometheus Configuration
 
-Prometheus + Grafana runs on a separate VM for resilience — monitoring data is preserved even if the app server goes down.
-
-On that monitoring VM, configure Prometheus to scrape this app endpoint:
+On the monitoring VM, configure Prometheus to scrape the app endpoint:
 
 ```yaml
 scrape_configs:
@@ -237,7 +267,9 @@ scrape_configs:
             - targets: ["<APP_VM_PUBLIC_OR_PRIVATE_IP>:8080"]
 ```
 
-## 🔄 Development Workflow
+---
+
+## Development Workflow
 
 ### Git Commit Conventions
 
@@ -252,19 +284,21 @@ We follow **Conventional Commits** for clean and readable history:
 | `ci` | CI/CD changes | `ci: add Docker build workflow` |
 | `test` | Tests | `test: add integration tests` |
 | `style` | Code formatting | `style: format Go code with gofmt` |
+| `chore` | Maintenance | `chore: reorganize docs folder` |
 
 **Format:** `<type>: <description>`
 
 ### Branch Strategy
 
-Se [`docs/BRANCHING_STRATEGY.md`](docs/BRANCHING_STRATEGY.md) for the full strategy.
+See [`docs/mandatory/BRANCHING_STRATEGY.md`](docs/mandatory/BRANCHING_STRATEGY.md) for the full strategy.
 
-We follow **GitHub Flow** — simple and effective for our team size:
+We follow **GitHub Flow** - simple and effective for our team size:
 
-- `main` — Production-ready code, always deployable
-- `feat/*` — New features (branch from main, PR back to main)
-- `fix/*` — Bug fixes (branch from main, PR back to main)
-- `ci/*` — CI/CD changes (branch from main, PR back to main)
+- `main` - Production-ready code, always deployable
+- `feat/*` - New features (branch from main, PR back to main)
+- `fix/*` - Bug fixes (branch from main, PR back to main)
+- `ci/*` - CI/CD changes (branch from main, PR back to main)
+- `chore/*` - Maintenance and housekeeping
 
 ### Code Quality
 
@@ -284,9 +318,9 @@ go test -v ./...
 
 ---
 
-## ✅ Project Milestones
+## Project Milestones
 
-### Week 1-2: Foundation ✅ Completed
+### Week 1-2: Foundation - Completed
 - [x] Legacy Python codebase analysis
 - [x] Dependency graph creation
 - [x] Framework selection (Go)
@@ -294,14 +328,14 @@ go test -v ./...
 - [x] Kanban board setup (GitHub Projects)
 - [x] Initial Go project structure
 
-### Week 3: Deployment & Cloud ✅ Completed
+### Week 3: Deployment & Cloud - Completed
 - [x] GitHub Actions CI/CD setup
 - [x] Azure VM deployment
 - [x] SSH configuration
 - [x] Production deployment
 - [x] Custom domain
 
-### Week 4-5: Quality & Containerization ✅ Completed
+### Week 4-5: Quality & Containerization - Completed
 - [x] Linting setup (`golangci-lint`)
 - [x] Branch protection rules
 - [x] Docker containerization
@@ -309,22 +343,22 @@ go test -v ./...
 - [x] Integration tests
 - [x] Dependabot with auto-merge
 
-### Week 6-7: Continuous Delivery ✅ Completed
+### Week 6-7: Continuous Delivery - Completed
 - [x] Continuous Delivery pipeline (`cd.yml`)
 - [x] Docker Compose production deployment
 - [x] Security hardening (fail2ban, CSRF, middleware)
 - [x] Password reset flow
 
-### Week 8+: Advanced Topics 🔄 In Progress
+### Week 8+: Advanced Topics
 - [x] PostgreSQL migration (from SQLite)
+- [x] Monitoring and observability (Prometheus + Grafana)
+- [x] SonarCloud code quality analysis
+- [ ] Ansible configuration management (in progress)
 - [ ] Terraform infrastructure
-- [ ] Monitoring and observability
-- [ ] Performance optimization
-- [ ] Final presentation
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 1. Create a new branch from `main` following the branch naming convention
 2. Make your changes
@@ -334,7 +368,7 @@ go test -v ./...
 
 ---
 
-## 📄 License
+## License
 
 This project is part of EK's DevOps module 2026.
 
