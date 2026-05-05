@@ -1,0 +1,66 @@
+---
+- name: Setup WhoKnows VM
+  hosts: whoknows
+  become: true
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install packages
+      apt:
+        name:
+          - fail2ban
+          - ufw
+          - git
+          - nginx
+        state: present
+
+    - name: Start og enable fail2ban
+      service:
+        name: fail2ban
+        state: started
+        enabled: yes
+
+    - name: Install Docker
+      shell: curl -fsSL https://get.docker.com | sh
+      args:
+        creates: /usr/bin/docker
+
+    - name: Install docker-compose
+      apt:
+        name: docker-compose
+        state: present
+
+    - name: Tilføj adminuser til docker gruppe
+      user:
+        name: adminuser
+        groups: docker
+        append: yes
+
+    - name: UFW - tillad SSH
+      ufw:
+        rule: allow
+        port: "22"
+
+    - name: UFW - tillad 8080
+      ufw:
+        rule: allow
+        port: "8080"
+
+    - name: Start og enable nginx
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: UFW - tillad HTTP
+      ufw:
+        rule: allow
+        port: "80"
+
+    - name: UFW - enable
+      ufw:
+        state: enabled
+        policy: deny
