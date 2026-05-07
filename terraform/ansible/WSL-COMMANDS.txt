@@ -1,0 +1,14 @@
+============================
+  WSL DEPLOY & DESTROY
+============================
+
+Kør fra WSL terminal:
+
+--- DEPLOY ---
+cd /mnt/c/Users/Lenovo/OneDrive/Dokumenter/Skole/KEA/IntelliJProjects/devops-syntaxsquad
+sed -i 's/\r//' terraform/ansible/deploy.sh
+bash terraform/ansible/deploy.sh
+
+--- DESTROY ---
+cd /mnt/c/Users/Lenovo/OneDrive/Dokumenter/Skole/KEA/IntelliJProjects/devops-syntaxsquad/terraform
+terraform destroy -auto-approve
