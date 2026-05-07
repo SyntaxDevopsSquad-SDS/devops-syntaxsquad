@@ -54,6 +54,8 @@
           - ufw
           - nginx
           - curl
+          - certbot
+          - python3-certbot-nginx
         state: present
 
     - name: Start og enable fail2ban
@@ -81,6 +83,11 @@
       ufw:
         rule: allow
         port: "80"
+
+    - name: UFW - tillad HTTPS
+      ufw:
+        rule: allow
+        port: "443"
 
     - name: UFW - enable
       ufw:
@@ -171,7 +178,7 @@
               environment:
                 - GF_SECURITY_ADMIN_USER=admin
                 - GF_SECURITY_ADMIN_PASSWORD={{ grafana_password }}
-                - GF_SERVER_ROOT_URL=http://{{ ansible_host }}
+                - GF_SERVER_ROOT_URL=https://monitor.syntax-reborndev.com
               volumes:
                 - grafana-data:/var/lib/grafana
                 - ./grafana-provisioning/datasources:/etc/grafana/provisioning/datasources:ro
@@ -196,13 +203,14 @@
         content: |
           server {
               listen 80;
-              server_name _;
+              server_name monitor.syntax-reborndev.com;
 
               location / {
                   proxy_pass http://localhost:3000;
                   proxy_set_header Host $host;
                   proxy_set_header X-Real-IP $remote_addr;
                   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
               }
           }
 
@@ -221,6 +229,17 @@
       service:
         name: nginx
         state: restarted
+
+    - name: Obtain SSL certificate with Certbot
+      command: >
+        certbot --nginx
+        -d monitor.syntax-reborndev.com
+        --non-interactive
+        --agree-tos
+        --register-unsafely-without-email
+        --redirect
+      args:
+        creates: /etc/letsencrypt/live/monitor.syntax-reborndev.com/fullchain.pem
 
     # ─── Watchdog ──────────────────────────────────────────────────────────────
     - name: Kopiér SSH privat nøgle til monitoring VM (bruges af watchdog)
