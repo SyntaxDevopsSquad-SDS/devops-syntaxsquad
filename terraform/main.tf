@@ -4,6 +4,17 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "=4.69.0"
     }
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.0"
+    }
+  }
+
+  backend "azurerm" {
+    resource_group_name  = "tfstate-rg"
+    storage_account_name = "whoknowstfstate"
+    container_name       = "tfstate"
+    key                  = "whoknows.terraform.tfstate"
   }
 }
 
@@ -14,7 +25,7 @@ provider "azurerm" {
 
 resource "azurerm_resource_group" "whoknows" {
   name     = "whoknows-rg"
-  location = "Switzerland North" # Needs to be changed to a location that supports the VM size you want to use, e.g. "East US"
+  location = "norwayeast"
 }
 
 resource "azurerm_virtual_network" "whoknows" {
@@ -97,6 +108,13 @@ resource "azurerm_network_security_rule" "whoknows_ssh_rule" {
   destination_address_prefix  = "*"
   network_security_group_name = azurerm_network_security_group.whoknows_nsg.name
   resource_group_name         = azurerm_resource_group.whoknows.name
+}
+
+resource "azurerm_virtual_machine_data_disk_attachment" "postgres_data" {
+  managed_disk_id    = "/subscriptions/${var.subscription_id}/resourceGroups/whoknows-data-rg/providers/Microsoft.Compute/disks/whoknows-postgres-data"
+  virtual_machine_id = azurerm_linux_virtual_machine.whoknows.id
+  lun                = 10
+  caching            = "ReadWrite"
 }
 
 resource "azurerm_network_security_rule" "whoknows_8080_rule" {
