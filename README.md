@@ -4,8 +4,10 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 
 ## Live Application
 
-> **App:** [https://www.syntax-reborndev.com/](https://www.syntax-reborndev.com/)
-> **Monitoring:** [https://monitor.syntax-reborndev.com/](https://monitor.syntax-reborndev.com/)
+| | Current (Terraform + Azure + DigitalOcean) | Original (Azure only, pre-Terraform) |
+|---|---|---|
+| **App** | [https://syntax-reborndev.com/](https://syntax-reborndev.com/) | [https://original.syntax-reborndev.com/](https://original.syntax-reborndev.com/) |
+| **Monitoring** | [https://monitor.syntax-reborndev.com/](https://monitor.syntax-reborndev.com/) | [https://original-monitor.syntax-reborndev.com/](https://original-monitor.syntax-reborndev.com/) |
 
 ---
 
