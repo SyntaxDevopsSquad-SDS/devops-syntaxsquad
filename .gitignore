@@ -110,3 +110,7 @@ terraform.rc
 
 # Ansible
 terraform/ansible/inventory.ini
+terraform/ansible/monitoring-inventory.ini
+
+# Prometheus backup
+prometheus-backup.tar.gz
