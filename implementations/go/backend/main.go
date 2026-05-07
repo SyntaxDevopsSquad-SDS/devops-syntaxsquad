@@ -52,6 +52,7 @@ func main() {
 	http.HandleFunc("/api/logout", apiLogoutHandler)
 	http.HandleFunc("/api/register", apiRegisterHandler)
 	http.HandleFunc("/api/reset-password", apiResetPasswordHandler)
+	http.HandleFunc("/health", healthHandler)
 	registerMetricsRoute()
 
 	// 6. Start serveren
