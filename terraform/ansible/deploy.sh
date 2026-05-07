@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
 # Indlæs lokale hemmeligheder (GRAFANA_PASSWORD m.fl.)
-if [ -f "../../.env" ]; then
+if [[ -f "../../.env" ]]; then
   set -a; source ../../.env; set +a
 fi
 
