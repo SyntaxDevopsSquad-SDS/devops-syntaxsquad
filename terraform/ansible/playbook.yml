@@ -177,7 +177,7 @@
         content: |
           server {
               listen 80;
-              server_name syntax-reborndev.com www.syntax-reborndev.com;
+              server_name syntax-reborndev.com;
 
               location / {
                   proxy_pass http://localhost:8080;
@@ -209,7 +209,6 @@
       command: >
         certbot --nginx
         -d syntax-reborndev.com
-        -d www.syntax-reborndev.com
         --non-interactive
         --agree-tos
         --register-unsafely-without-email
