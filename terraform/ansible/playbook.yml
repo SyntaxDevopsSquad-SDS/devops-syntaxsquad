@@ -4,6 +4,10 @@
   become: true
 
   tasks:
+    - name: Wait for VM to be ready
+      wait_for_connection:
+        timeout: 120
+
     - name: Update apt cache
       apt:
         update_cache: yes
@@ -28,9 +32,9 @@
       args:
         creates: /usr/bin/docker
 
-    - name: Install docker-compose
+    - name: Install docker-compose-plugin (v2)
       apt:
-        name: docker-compose
+        name: docker-compose-plugin
         state: present
 
     - name: Tilføj adminuser til docker gruppe
@@ -64,3 +68,108 @@
       ufw:
         state: enabled
         policy: deny
+
+    - name: Create postgres disk mount point
+      file:
+        path: /opt/whoknows/pgdisk
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Check if data disk is formatted
+      command: blkid /dev/disk/azure/scsi1/lun10
+      register: blkid_result
+      failed_when: false
+      changed_when: false
+
+    - name: Format data disk (only if not already formatted)
+      filesystem:
+        fstype: ext4
+        dev: /dev/disk/azure/scsi1/lun10
+      when: blkid_result.rc != 0
+
+    - name: Mount data disk
+      mount:
+        path: /opt/whoknows/pgdisk
+        src: /dev/disk/azure/scsi1/lun10
+        fstype: ext4
+        opts: defaults,nofail
+        state: mounted
+
+    - name: Opret postgres data undermappe på disken
+      file:
+        path: /opt/whoknows/pgdisk/data
+        state: directory
+        owner: 999
+        group: 999
+        mode: "0700"
+
+    - name: Opret /opt/whoknows mappe
+      file:
+        path: /opt/whoknows
+        state: directory
+        owner: adminuser
+        group: adminuser
+        mode: "0755"
+
+    - name: Kopiér docker-compose fil til server
+      copy:
+        src: ../../docker-compose.prod.yml
+        dest: /opt/whoknows/docker-compose.yml
+        owner: adminuser
+        group: adminuser
+        mode: "0644"
+
+    - name: Kopiér .env fil til server
+      copy:
+        src: ../../.env
+        dest: /opt/whoknows/.env
+        owner: adminuser
+        group: adminuser
+        mode: "0600"
+
+    - name: Konfigurer Nginx som reverse proxy
+      copy:
+        dest: /etc/nginx/sites-available/whoknows
+        content: |
+          server {
+              listen 80;
+              server_name _;
+
+              location / {
+                  proxy_pass http://localhost:8080;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              }
+          }
+        mode: "0644"
+
+    - name: Aktiver Nginx site
+      file:
+        src: /etc/nginx/sites-available/whoknows
+        dest: /etc/nginx/sites-enabled/whoknows
+        state: link
+
+    - name: Fjern default Nginx site
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Genstart Nginx
+      service:
+        name: nginx
+        state: restarted
+
+    - name: Log ind på GHCR
+      shell: |
+        source /opt/whoknows/.env
+        echo "$GHCR_PAT" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+      args:
+        executable: /bin/bash
+
+    - name: Start Docker Compose
+      shell: docker compose up -d
+      args:
+        chdir: /opt/whoknows
