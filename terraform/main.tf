@@ -8,6 +8,14 @@ terraform {
       source  = "hashicorp/local"
       version = "~> 2.0"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 4.0"
+    }
+    digitalocean = {
+      source  = "digitalocean/digitalocean"
+      version = "~> 2.0"
+    }
   }
 
   backend "azurerm" {
@@ -21,6 +29,19 @@ terraform {
 provider "azurerm" {
   features {}
   subscription_id = var.subscription_id
+}
+
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
+}
+
+resource "cloudflare_record" "app" {
+  zone_id = var.cloudflare_zone_id
+  name    = "@"
+  content = azurerm_public_ip.whoknows.ip_address
+  type    = "A"
+  ttl     = 60
+  proxied = false
 }
 
 resource "azurerm_resource_group" "whoknows" {
