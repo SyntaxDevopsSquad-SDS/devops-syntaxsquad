@@ -1,0 +1,272 @@
+---
+- name: Setup WhoKnows Monitoring VM (Prometheus + Grafana + Watchdog)
+  hosts: monitoring
+  become: true
+
+  tasks:
+    - name: Wait for VM to be ready
+      wait_for_connection:
+        timeout: 120
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Opret 4GB swap fil
+      command: fallocate -l 4G /swapfile
+      args:
+        creates: /swapfile
+
+    - name: Sæt korrekte rettigheder på swap fil
+      file:
+        path: /swapfile
+        mode: "0600"
+
+    - name: Formater swap fil
+      command: mkswap /swapfile
+      args:
+        creates: /proc/swaps
+      register: mkswap_result
+      changed_when: mkswap_result.rc == 0
+
+    - name: Aktiver swap
+      command: swapon /swapfile
+      failed_when: false
+      changed_when: false
+
+    - name: Tilføj swap til /etc/fstab (persistent)
+      lineinfile:
+        path: /etc/fstab
+        line: '/swapfile none swap sw 0 0'
+        state: present
+
+    - name: Sæt swappiness til 10
+      sysctl:
+        name: vm.swappiness
+        value: "10"
+        state: present
+        sysctl_set: yes
+
+    - name: Install packages
+      apt:
+        name:
+          - fail2ban
+          - ufw
+          - nginx
+          - curl
+        state: present
+
+    - name: Start og enable fail2ban
+      service:
+        name: fail2ban
+        state: started
+        enabled: yes
+
+    - name: Install Docker
+      shell: curl -fsSL https://get.docker.com | sh
+      args:
+        creates: /usr/bin/docker
+
+    - name: Install docker-compose-plugin (v2)
+      apt:
+        name: docker-compose-plugin
+        state: present
+
+    - name: UFW - tillad SSH
+      ufw:
+        rule: allow
+        port: "22"
+
+    - name: UFW - tillad HTTP
+      ufw:
+        rule: allow
+        port: "80"
+
+    - name: UFW - enable
+      ufw:
+        state: enabled
+        policy: deny
+
+    - name: Opret /opt/monitoring mappe
+      file:
+        path: /opt/monitoring
+        state: directory
+        mode: "0755"
+
+    # ─── Persistent DigitalOcean Volume til Prometheus data ────────────────────
+    - name: Tjek om Prometheus data volume er formateret
+      command: blkid /dev/disk/by-id/scsi-0DO_Volume_whoknows-prometheus-data
+      register: blkid_prometheus
+      failed_when: false
+      changed_when: false
+
+    - name: Formater Prometheus data volume (kun hvis ikke allerede formateret)
+      filesystem:
+        fstype: ext4
+        dev: /dev/disk/by-id/scsi-0DO_Volume_whoknows-prometheus-data
+      when: blkid_prometheus.rc != 0
+
+    - name: Opret mount point til Prometheus data
+      file:
+        path: /opt/monitoring/prometheus-data
+        state: directory
+        mode: "0755"
+
+    - name: Mount Prometheus data volume
+      mount:
+        path: /opt/monitoring/prometheus-data
+        src: /dev/disk/by-id/scsi-0DO_Volume_whoknows-prometheus-data
+        fstype: ext4
+        opts: defaults,nofail
+        state: mounted
+
+    - name: Sæt korrekt ejer på Prometheus data mappe (uid 65534 = nobody i Prometheus image)
+      file:
+        path: /opt/monitoring/prometheus-data
+        owner: 65534
+        group: 65534
+        recurse: yes
+
+    # ─── Prometheus konfiguration ──────────────────────────────────────────────
+    - name: Opret Prometheus konfiguration
+      copy:
+        dest: /opt/monitoring/prometheus.yml
+        mode: "0644"
+        content: |
+          global:
+            scrape_interval: 15s
+            evaluation_interval: 15s
+
+          scrape_configs:
+            - job_name: 'whoknows-app'
+              static_configs:
+                - targets: ['{{ app_ip }}:8080']
+              metrics_path: '/metrics'
+
+    # ─── Grafana provisioning (datasource + dashboards) ────────────────────────
+    - name: Kopiér Grafana provisioning filer
+      copy:
+        src: grafana-provisioning/
+        dest: /opt/monitoring/grafana-provisioning/
+        mode: "0644"
+
+    # ─── Docker Compose til monitoring stack ───────────────────────────────────
+    - name: Opret docker-compose.yml til monitoring stack
+      copy:
+        dest: /opt/monitoring/docker-compose.yml
+        mode: "0644"
+        content: |
+          services:
+            prometheus:
+              image: prom/prometheus:latest
+              volumes:
+                - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+                - ./prometheus-data:/prometheus
+              restart: unless-stopped
+
+            grafana:
+              image: grafana/grafana:latest
+              ports:
+                - "3000:3000"
+              environment:
+                - GF_SECURITY_ADMIN_USER=admin
+                - GF_SECURITY_ADMIN_PASSWORD={{ grafana_password }}
+                - GF_SERVER_ROOT_URL=http://{{ ansible_host }}
+              volumes:
+                - grafana-data:/var/lib/grafana
+                - ./grafana-provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+                - ./grafana-provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+              depends_on:
+                - prometheus
+              restart: unless-stopped
+
+          volumes:
+            grafana-data:
+
+    - name: Start monitoring stack
+      shell: docker compose up -d
+      args:
+        chdir: /opt/monitoring
+
+    # ─── Nginx reverse proxy → Grafana ─────────────────────────────────────────
+    - name: Konfigurer Nginx som reverse proxy til Grafana
+      copy:
+        dest: /etc/nginx/sites-available/monitoring
+        mode: "0644"
+        content: |
+          server {
+              listen 80;
+              server_name _;
+
+              location / {
+                  proxy_pass http://localhost:3000;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              }
+          }
+
+    - name: Aktiver Nginx site
+      file:
+        src: /etc/nginx/sites-available/monitoring
+        dest: /etc/nginx/sites-enabled/monitoring
+        state: link
+
+    - name: Fjern default Nginx site
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Genstart Nginx
+      service:
+        name: nginx
+        state: restarted
+
+    # ─── Watchdog ──────────────────────────────────────────────────────────────
+    - name: Kopiér SSH privat nøgle til monitoring VM (bruges af watchdog)
+      copy:
+        src: ~/.ssh/id_rsa
+        dest: /root/.ssh/id_rsa
+        mode: "0600"
+
+    - name: Opret watchdog script
+      copy:
+        dest: /opt/monitoring/watchdog.sh
+        mode: "0755"
+        content: |
+          #!/bin/bash
+          APP_URL="http://{{ app_ip }}/health"
+          MAX_FAILURES=3
+          FAILURE_FILE="/tmp/watchdog_failures"
+          LOG_FILE="/var/log/watchdog.log"
+
+          FAILURES=$(cat "$FAILURE_FILE" 2>/dev/null || echo 0)
+
+          if curl -sf --max-time 10 "$APP_URL" > /dev/null; then
+              if [ "$FAILURES" -gt 0 ]; then
+                  echo "$(date): App er oppe igen efter $FAILURES fejlede checks" >> "$LOG_FILE"
+              fi
+              echo 0 > "$FAILURE_FILE"
+          else
+              FAILURES=$((FAILURES + 1))
+              echo $FAILURES > "$FAILURE_FILE"
+              echo "$(date): Health check fejlede (forsøg $FAILURES/$MAX_FAILURES)" >> "$LOG_FILE"
+
+              if [ "$FAILURES" -ge "$MAX_FAILURES" ]; then
+                  echo "$(date): App nede - forsøger genstart via SSH..." >> "$LOG_FILE"
+                  ssh -o StrictHostKeyChecking=no \
+                      -o ConnectTimeout=10 \
+                      -i /root/.ssh/id_rsa \
+                      adminuser@{{ app_ip }} \
+                      "cd /opt/whoknows && docker compose restart" >> "$LOG_FILE" 2>&1 \
+                      && echo "$(date): Genstart lykkedes" >> "$LOG_FILE" \
+                      || echo "$(date): Genstart fejlede - manuel handling nødvendig" >> "$LOG_FILE"
+                  echo 0 > "$FAILURE_FILE"
+              fi
+          fi
+
+    - name: Opret cron job for watchdog (hvert 5. minut)
+      cron:
+        name: "WhoKnows health watchdog"
+        minute: "*/5"
+        job: "/opt/monitoring/watchdog.sh >> /var/log/watchdog.log 2>&1"
