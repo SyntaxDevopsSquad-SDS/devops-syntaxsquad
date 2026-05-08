@@ -263,3 +263,85 @@ func TestSearchMetricsNormalizeLabels(t *testing.T) {
 		t.Fatalf("expected api/da failure search count 1, got %f", failureCount)
 	}
 }
+
+func TestZeroResultsMetricIncrementsByLanguage(t *testing.T) {
+	setupMetricsTestRuntime(t)
+
+	recordZeroResults("en")
+	recordZeroResults("en")
+	recordZeroResults("DA") // should normalize to "da"
+
+	enCount := testutil.ToFloat64(searchZeroResultsTotal.WithLabelValues("en"))
+	if enCount != 2 {
+		t.Fatalf("expected zero_results en count 2, got %f", enCount)
+	}
+
+	daCount := testutil.ToFloat64(searchZeroResultsTotal.WithLabelValues("da"))
+	if daCount != 1 {
+		t.Fatalf("expected zero_results da count 1, got %f", daCount)
+	}
+}
+
+func TestSessionRecordingCreatesAndEndsSession(t *testing.T) {
+	setupMetricsTestRuntime(t)
+	setupMetricsTestDB(t)
+
+	_, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS sessions (
+			id TEXT PRIMARY KEY,
+			username TEXT NOT NULL,
+			login_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			logout_at TIMESTAMPTZ
+		)
+	`)
+	if err != nil {
+		t.Fatalf("failed creating sessions table: %v", err)
+	}
+	t.Cleanup(func() {
+		_, _ = db.Exec("DROP TABLE IF EXISTS sessions")
+	})
+
+	sessionID := "test-session-id-001"
+	recordSessionStart(sessionID, "testuser")
+
+	var username string
+	err = db.QueryRow("SELECT username FROM sessions WHERE id = $1", sessionID).Scan(&username)
+	if err != nil {
+		t.Fatalf("session not found after recordSessionStart: %v", err)
+	}
+	if username != "testuser" {
+		t.Fatalf("expected username 'testuser', got '%s'", username)
+	}
+
+	recordSessionEnd(sessionID)
+
+	var logoutAt *string
+	err = db.QueryRow("SELECT logout_at::TEXT FROM sessions WHERE id = $1", sessionID).Scan(&logoutAt)
+	if err != nil {
+		t.Fatalf("session not found after recordSessionEnd: %v", err)
+	}
+	if logoutAt == nil {
+		t.Fatalf("expected logout_at to be set after recordSessionEnd")
+	}
+}
+
+func TestRegisteredUsersTotalPolledFromDB(t *testing.T) {
+	setupMetricsTestRuntime(t)
+	setupMetricsTestDB(t)
+
+	hash, _ := hashPassword("password123")
+	_, _ = db.Exec("INSERT INTO users (username, email, password) VALUES ($1, $2, $3)", "polluser1", "poll1@example.com", hash)
+	_, _ = db.Exec("INSERT INTO users (username, email, password) VALUES ($1, $2, $3)", "polluser2", "poll2@example.com", hash)
+
+	var count float64
+	if err := db.QueryRow("SELECT COUNT(*) FROM users").Scan(&count); err != nil {
+		t.Fatalf("failed querying user count: %v", err)
+	}
+	registeredUsersTotal.Set(count)
+
+	gaugeVal := testutil.ToFloat64(registeredUsersTotal)
+	if gaugeVal != 2 {
+		t.Fatalf("expected registered_users_total to be 2, got %f", gaugeVal)
+	}
+}
+
