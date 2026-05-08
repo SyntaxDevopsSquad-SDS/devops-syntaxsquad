@@ -1,2 +1,6 @@
-subscription_id = "00000000-0000-0000-0000-000000000000"
-vm_name         = "example-vm"
+subscription_id      = "00000000-0000-0000-0000-000000000000"
+vm_name              = "main-vm"
+cloudflare_api_token = "your-cloudflare-api-token"
+cloudflare_zone_id   = "your-cloudflare-zone-id"
+do_token              = "your-digitalocean-api-token"
+do_ssh_key_fingerprint = "xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx"

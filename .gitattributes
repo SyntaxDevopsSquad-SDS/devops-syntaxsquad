@@ -1,0 +1,9 @@
+# Force LF line endings for unix files
+*.sh        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.tf        text eol=lf
+*.py        text eol=lf
+*.go        text eol=lf
+Makefile    text eol=lf
+Dockerfile  text eol=lf
