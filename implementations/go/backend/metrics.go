@@ -73,6 +73,37 @@ var (
 		},
 		[]string{"source", "language", "query", "outcome"},
 	)
+
+	// Business metrics
+	searchZeroResultsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "whoknows_search_zero_results_total",
+			Help: "Number of searches that returned zero results, partitioned by language. Indicates content gaps.",
+		},
+		[]string{"language"},
+	)
+
+	activeSessions = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "whoknows_active_sessions",
+			Help: "Number of users currently logged in (server-side session tracking via PostgreSQL).",
+		},
+	)
+
+	sessionDurationSeconds = prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Name:    "whoknows_session_duration_seconds",
+			Help:    "Duration of user sessions in seconds, from login to explicit logout.",
+			Buckets: []float64{30, 60, 120, 300, 600, 1200, 1800, 3600, 7200},
+		},
+	)
+
+	registeredUsersTotal = prometheus.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "whoknows_registered_users_total",
+			Help: "Total number of registered users in the database. Polled every 30 seconds.",
+		},
+	)
 )
 
 func initMetrics() {
@@ -83,8 +114,56 @@ func initMetrics() {
 			loginAttemptsTotal,
 			registrationsTotal,
 			searchesTotal,
+			searchZeroResultsTotal,
+			activeSessions,
+			sessionDurationSeconds,
+			registeredUsersTotal,
 		)
 	})
+}
+
+func startDBMetricsPoller() {
+	go func() {
+		for {
+			var count float64
+			if err := db.QueryRow("SELECT COUNT(*) FROM users").Scan(&count); err == nil {
+				registeredUsersTotal.Set(count)
+			}
+
+			var activeSessCount float64
+			if err := db.QueryRow("SELECT COUNT(*) FROM sessions WHERE logout_at IS NULL").Scan(&activeSessCount); err == nil {
+				activeSessions.Set(activeSessCount)
+			}
+
+			time.Sleep(30 * time.Second)
+		}
+	}()
+}
+
+func recordZeroResults(language string) {
+	searchZeroResultsTotal.WithLabelValues(normalizeLanguageLabel(language)).Inc()
+}
+
+func recordSessionStart(sessionID, username string) {
+	if _, err := db.Exec(
+		"INSERT INTO sessions (id, username, login_at) VALUES ($1, $2, NOW()) ON CONFLICT (id) DO NOTHING",
+		sessionID, username,
+	); err != nil {
+		return
+	}
+}
+
+func recordSessionEnd(sessionID string) {
+	var loginAt time.Time
+	err := db.QueryRow("SELECT login_at FROM sessions WHERE id = $1 AND logout_at IS NULL", sessionID).Scan(&loginAt)
+	if err != nil {
+		return
+	}
+	duration := time.Since(loginAt).Seconds()
+	if _, err := db.Exec("UPDATE sessions SET logout_at = NOW() WHERE id = $1", sessionID); err != nil {
+		return
+	}
+	sessionDurationSeconds.Observe(duration)
 }
 
 func registerMetricsRoute() {
@@ -186,6 +265,9 @@ func resetMetricsForTests() {
 	loginAttemptsTotal.Reset()
 	registrationsTotal.Reset()
 	searchesTotal.Reset()
+	searchZeroResultsTotal.Reset()
+	activeSessions.Set(0)
+	registeredUsersTotal.Set(0)
 }
 
 type instrumentedResponseWriter struct {
