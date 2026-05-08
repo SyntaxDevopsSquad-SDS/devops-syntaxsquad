@@ -5,8 +5,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
 # Indlæs lokale hemmeligheder (GRAFANA_PASSWORD m.fl.)
-if [[ -f "../../.env" ]]; then
-  set -a; source ../../.env; set +a
+ENV_FILE="$SCRIPT_DIR/../../.env"
+if [[ -f "$ENV_FILE" ]]; then
+  set -a; source "$ENV_FILE"; set +a
 fi
 
 echo "🚀 Opretter infrastruktur med Terraform..."
