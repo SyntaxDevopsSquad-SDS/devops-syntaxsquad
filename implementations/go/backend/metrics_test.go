@@ -344,4 +344,3 @@ func TestRegisteredUsersTotalPolledFromDB(t *testing.T) {
 		t.Fatalf("expected registered_users_total to be 2, got %f", gaugeVal)
 	}
 }
-
