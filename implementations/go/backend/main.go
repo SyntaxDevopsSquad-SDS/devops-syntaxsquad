@@ -35,6 +35,9 @@ func main() {
 		log.Fatalf("Migration failed: %v", err)
 	}
 
+	// Start polling DB for registered users and active sessions every 30s
+	startDBMetricsPoller()
+
 	// 3. Server static filer (CSS, billeder)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("../static"))))
 
