@@ -191,20 +191,6 @@ resource "azurerm_network_security_rule" "whoknows_https_rule" {
   resource_group_name         = azurerm_resource_group.whoknows.name
 }
 
-resource "azurerm_network_security_rule" "whoknows_https_rule" {
-  name                        = "HTTPS"
-  priority                    = 300
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  destination_port_range      = "443"
-  source_address_prefix       = "*"
-  destination_address_prefix  = "*"
-  network_security_group_name = azurerm_network_security_group.whoknows_nsg.name
-  resource_group_name         = azurerm_resource_group.whoknows.name
-}
-
 resource "azurerm_subnet_network_security_group_association" "whoknows_assoc" {
   subnet_id                 = azurerm_subnet.whoknows.id
   network_security_group_id = azurerm_network_security_group.whoknows_nsg.id
