@@ -1,6 +1,6 @@
 # SyntaxDevopsSquad - WhoKnows Migration Project
 
-Welcome to the **SyntaxDevopsSquad** main repository. This project is part of our 2026 DevOps module at EK, focusing on migrating a legacy Python Flask application to Go while learning DevOps practices including automation, CI/CD, and infrastructure as code.
+Welcome to the **SyntaxDevopsSquad** main repository. This project is part of our 2026 DevOps module at KEA, focusing on migrating a legacy Python Flask application to Go while learning DevOps practices including automation, CI/CD, and infrastructure as code.
 
 ## Live Application
 
@@ -427,7 +427,7 @@ go test ./...
 
 ## License
 
-This project is part of EK's DevOps module 2026.
+This project is part of KEA's DevOps module 2026.
 
 ---
 
