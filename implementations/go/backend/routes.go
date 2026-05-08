@@ -216,6 +216,9 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		recordSearch("web", language, query, false)
+		if len(searchResults) == 0 {
+			recordZeroResults(language)
+		}
 	}
 
 	tmpl, err := parseTemplates("layout.html", "search.html")
@@ -350,6 +353,9 @@ func apiSearchHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		recordSearch("api", language, query, false)
+		if len(searchResults) == 0 {
+			recordZeroResults(language)
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -422,13 +428,20 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sessionID, err := generateCSRFToken()
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 	session, _ := store.Get(r, "session")
 	session.Values["user"] = username
+	session.Values["session_id"] = sessionID
 	if err := session.Save(r, w); err != nil {
 		log.Printf("error saving session: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+	recordSessionStart(sessionID, username)
 
 	setFlash(w, r, "You were logged in")
 	outcome = loginOutcomeSuccess
@@ -614,7 +627,11 @@ func apiResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 
 func apiLogoutHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, "session")
+	if sessionID, ok := session.Values["session_id"].(string); ok && sessionID != "" {
+		recordSessionEnd(sessionID)
+	}
 	delete(session.Values, "user")
+	delete(session.Values, "session_id")
 	if err := session.Save(r, w); err != nil {
 		log.Printf("error saving session: %v", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
