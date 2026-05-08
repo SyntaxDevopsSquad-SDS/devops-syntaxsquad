@@ -33,10 +33,11 @@ resource "local_file" "monitoring_inventory" {
 }
 
 resource "cloudflare_record" "monitoring" {
-  zone_id = var.cloudflare_zone_id
-  name    = "monitor"
-  content = digitalocean_droplet.monitoring.ipv4_address
-  type    = "A"
-  ttl     = 60
-  proxied = false
+  zone_id         = var.cloudflare_zone_id
+  name            = "monitor"
+  content         = digitalocean_droplet.monitoring.ipv4_address
+  type            = "A"
+  ttl             = 1
+  proxied         = true
+  allow_overwrite = true
 }
