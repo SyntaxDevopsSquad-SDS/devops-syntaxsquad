@@ -54,8 +54,6 @@
           - ufw
           - git
           - nginx
-          - certbot
-          - python3-certbot-nginx
         state: present
 
     - name: Start og enable fail2ban
@@ -177,7 +175,7 @@
         content: |
           server {
               listen 80;
-              server_name syntax-reborndev.com;
+              server_name syntax-reborndev.com www.syntax-reborndev.com;
 
               location / {
                   proxy_pass http://localhost:8080;
@@ -204,17 +202,6 @@
       service:
         name: nginx
         state: restarted
-
-    - name: Obtain SSL certificate with Certbot
-      command: >
-        certbot --nginx
-        -d syntax-reborndev.com
-        --non-interactive
-        --agree-tos
-        --register-unsafely-without-email
-        --redirect
-      args:
-        creates: /etc/letsencrypt/live/syntax-reborndev.com/fullchain.pem
 
     - name: Log ind på GHCR
       shell: |
