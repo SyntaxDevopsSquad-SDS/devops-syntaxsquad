@@ -36,12 +36,23 @@ provider "cloudflare" {
 }
 
 resource "cloudflare_record" "app" {
-  zone_id = var.cloudflare_zone_id
-  name    = "@"
-  content = azurerm_public_ip.whoknows.ip_address
-  type    = "A"
-  ttl     = 60
-  proxied = false
+  zone_id         = var.cloudflare_zone_id
+  name            = "@"
+  content         = azurerm_public_ip.whoknows.ip_address
+  type            = "A"
+  ttl             = 1
+  proxied         = true
+  allow_overwrite = true
+}
+
+resource "cloudflare_record" "app_www" {
+  zone_id         = var.cloudflare_zone_id
+  name            = "www"
+  content         = azurerm_public_ip.whoknows.ip_address
+  type            = "A"
+  ttl             = 1
+  proxied         = true
+  allow_overwrite = true
 }
 
 resource "azurerm_resource_group" "whoknows" {
