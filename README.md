@@ -432,5 +432,5 @@ This project is part of KEA's DevOps module 2026.
 ---
 
 **Course:** DevOps 2026
-**Institution:** KEA Kobenhavn
+**Institution:** EK Kobenhavn
 **Instructor:** Anders Latif

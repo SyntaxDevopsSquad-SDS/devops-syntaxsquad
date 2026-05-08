@@ -47,6 +47,41 @@
         state: present
         sysctl_set: yes
 
+    - name: Opret 4GB swap fil
+      command: fallocate -l 4G /swapfile
+      args:
+        creates: /swapfile
+
+    - name: Sæt korrekte rettigheder på swap fil
+      file:
+        path: /swapfile
+        mode: "0600"
+
+    - name: Formater swap fil
+      command: mkswap /swapfile
+      args:
+        creates: /proc/swaps
+      register: mkswap_result
+      changed_when: mkswap_result.rc == 0
+
+    - name: Aktiver swap
+      command: swapon /swapfile
+      failed_when: false
+      changed_when: false
+
+    - name: Tilføj swap til /etc/fstab (persistent)
+      lineinfile:
+        path: /etc/fstab
+        line: '/swapfile none swap sw 0 0'
+        state: present
+
+    - name: Sæt swappiness til 10
+      sysctl:
+        name: vm.swappiness
+        value: "10"
+        state: present
+        sysctl_set: yes
+
     - name: Install packages
       apt:
         name:
@@ -54,6 +89,8 @@
           - ufw
           - git
           - nginx
+          - certbot
+          - python3-certbot-nginx
         state: present
 
     - name: Start og enable fail2ban
@@ -98,6 +135,11 @@
       ufw:
         rule: allow
         port: "80"
+
+    - name: UFW - tillad HTTPS
+      ufw:
+        rule: allow
+        port: "443"
 
     - name: UFW - tillad HTTPS
       ufw:
@@ -183,6 +225,7 @@
                   proxy_set_header X-Real-IP $remote_addr;
                   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                   proxy_set_header X-Forwarded-Proto $scheme;
+                  proxy_set_header X-Forwarded-Proto $scheme;
               }
           }
         mode: "0644"
@@ -202,6 +245,17 @@
       service:
         name: nginx
         state: restarted
+
+    - name: Obtain SSL certificate with Certbot
+      command: >
+        certbot --nginx
+        -d syntax-reborndev.com
+        --non-interactive
+        --agree-tos
+        --register-unsafely-without-email
+        --redirect
+      args:
+        creates: /etc/letsencrypt/live/syntax-reborndev.com/fullchain.pem
 
     - name: Log ind på GHCR
       shell: |
