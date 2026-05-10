@@ -313,7 +313,7 @@
   "time": { "from": "now-3h", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
-  "title": "WhoKnows — Business Metrics",
+  "title": "WhoKnows - Business Metrics",
   "uid": "whoknows-business",
   "version": 1
 }
