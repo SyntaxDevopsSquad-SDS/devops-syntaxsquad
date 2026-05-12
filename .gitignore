@@ -114,3 +114,5 @@ terraform/ansible/monitoring-inventory.ini
 
 # Prometheus backup
 prometheus-backup.tar.gz
+tools/endpoint-sim/config.json
+tools/endpoint-sim/config.prod.json
