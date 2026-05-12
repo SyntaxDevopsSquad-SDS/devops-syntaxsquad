@@ -58,3 +58,11 @@ INSERT INTO pages (title, url, language, content) VALUES
 ('JavaScript', 'http://web.archive.org/web/20081218123622/http://en.wikipedia.org:80/wiki/Javascript', 'en', 'JavaScript'),
 ('Database',   'http://web.archive.org/web/20081219060743/http://en.wikipedia.org:80/wiki/Database',   'en', 'Database')
 ON CONFLICT DO NOTHING;
+
+
+CREATE TABLE IF NOT EXISTS sessions (
+    id          TEXT PRIMARY KEY,
+    username    TEXT NOT NULL,
+    login_at    TIMESTAMP NOT NULL DEFAULT NOW(),
+    logout_at   TIMESTAMP
+);
