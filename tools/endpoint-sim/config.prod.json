@@ -1,0 +1,85 @@
+{
+  "report_every_s": 10,
+
+  "http": {
+    "bot_count": 5,
+    "interval_ms": 3000,
+    "endpoints": [
+      { "method": "GET", "url": "https://syntax-reborndev.com/health" },
+      { "method": "GET", "url": "https://syntax-reborndev.com/api/search?q=devops&language=en" },
+      { "method": "GET", "url": "https://syntax-reborndev.com/api/search?q=docker&language=en" },
+      { "method": "GET", "url": "https://syntax-reborndev.com/metrics" },
+      { "method": "GET", "url": "https://syntax-reborndev.com/about" }
+    ]
+  },
+
+  "db": {
+    "driver": "postgres",
+    "dsn": "",
+    "bot_count": 0,
+    "interval_ms": 5000
+  },
+
+  "user_bots": {
+    "enabled": true,
+    "base_url": "https://syntax-reborndev.com",
+    "credentials": [
+      { "username": "bot_normal_01",  "password": "Simulation2026!" },
+      { "username": "bot_normal_02",  "password": "Simulation2026!" },
+      { "username": "bot_normal_03",  "password": "Simulation2026!" },
+      { "username": "bot_normal_04",  "password": "Simulation2026!" },
+      { "username": "bot_normal_05",  "password": "Simulation2026!" },
+      { "username": "bot_normal_06",  "password": "Simulation2026!" },
+      { "username": "bot_normal_07",  "password": "Simulation2026!" },
+      { "username": "bot_normal_08",  "password": "Simulation2026!" },
+      { "username": "bot_normal_09",  "password": "Simulation2026!" },
+      { "username": "bot_normal_10",  "password": "Simulation2026!" },
+      { "username": "bot_heavy_01",   "password": "Simulation2026!" },
+      { "username": "bot_heavy_02",   "password": "Simulation2026!" },
+      { "username": "bot_heavy_03",   "password": "Simulation2026!" },
+      { "username": "bot_heavy_04",   "password": "Simulation2026!" },
+      { "username": "bot_heavy_05",   "password": "Simulation2026!" },
+      { "username": "bot_session_01", "password": "Simulation2026!" },
+      { "username": "bot_session_02", "password": "Simulation2026!" },
+      { "username": "bot_session_03", "password": "Simulation2026!" },
+      { "username": "bot_session_04", "password": "Simulation2026!" },
+      { "username": "bot_session_05", "password": "Simulation2026!" }
+    ],
+    "normal": {
+      "count": 10,
+      "searches_per_session": 3,
+      "pause_ms": 2000,
+      "loop_delay_ms": 5000
+    },
+    "heavy": {
+      "count": 5,
+      "searches_per_session": 10,
+      "pause_ms": 300,
+      "loop_delay_ms": 1000
+    },
+    "session": {
+      "count": 5,
+      "loop_delay_ms": 3000
+    }
+  },
+
+  "load_test": {
+    "enabled": true,
+    "urls": [
+      "https://syntax-reborndev.com/api/search?q=linux&language=en",
+      "https://syntax-reborndev.com/api/search?q=docker&language=en",
+      "https://syntax-reborndev.com/api/search?q=kubernetes&language=en",
+      "https://syntax-reborndev.com/api/search?q=terraform&language=en",
+      "https://syntax-reborndev.com/api/search?q=ansible&language=en",
+      "https://syntax-reborndev.com/api/search?q=nginx&language=en",
+      "https://syntax-reborndev.com/api/search?q=go&language=en",
+      "https://syntax-reborndev.com/api/search?q=ci&language=en",
+      "https://syntax-reborndev.com/api/search?q=devops&language=en",
+      "https://syntax-reborndev.com/api/search?q=python&language=en",
+      "https://syntax-reborndev.com/api/search?q=github&language=en",
+      "https://syntax-reborndev.com/api/search?q=postgresql&language=en"
+    ],
+    "concurrent": 30,
+    "total_requests": 600
+  }
+}
