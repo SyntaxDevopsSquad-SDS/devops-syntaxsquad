@@ -169,13 +169,26 @@
         group: adminuser
         mode: "0600"
 
+    - name: Generer self-signed SSL certifikat til Nginx
+      shell: |
+        mkdir -p /etc/nginx/ssl
+        openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+          -keyout /etc/nginx/ssl/whoknows.key \
+          -out /etc/nginx/ssl/whoknows.crt \
+          -subj "/CN=syntax-reborndev.com"
+      args:
+        creates: /etc/nginx/ssl/whoknows.crt
+
     - name: Konfigurer Nginx som reverse proxy
       copy:
         dest: /etc/nginx/sites-available/whoknows
         content: |
           server {
-              listen 80;
+              listen 443 ssl;
               server_name syntax-reborndev.com www.syntax-reborndev.com;
+
+              ssl_certificate /etc/nginx/ssl/whoknows.crt;
+              ssl_certificate_key /etc/nginx/ssl/whoknows.key;
 
               location / {
                   proxy_pass http://localhost:8080;
@@ -184,6 +197,12 @@
                   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                   proxy_set_header X-Forwarded-Proto $scheme;
               }
+          }
+
+          server {
+              listen 80;
+              server_name syntax-reborndev.com www.syntax-reborndev.com;
+              return 301 https://$host$request_uri;
           }
         mode: "0644"
 

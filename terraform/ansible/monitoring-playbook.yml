@@ -212,14 +212,27 @@
         chdir: /opt/monitoring
 
     # ─── Nginx reverse proxy → Grafana ─────────────────────────────────────────
+    - name: Generer self-signed SSL certifikat til Nginx
+      shell: |
+        mkdir -p /etc/nginx/ssl
+        openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+          -keyout /etc/nginx/ssl/monitoring.key \
+          -out /etc/nginx/ssl/monitoring.crt \
+          -subj "/CN=monitor.syntax-reborndev.com"
+      args:
+        creates: /etc/nginx/ssl/monitoring.crt
+
     - name: Konfigurer Nginx som reverse proxy til Grafana
       copy:
         dest: /etc/nginx/sites-available/monitoring
         mode: "0644"
         content: |
           server {
-              listen 80;
+              listen 443 ssl;
               server_name monitor.syntax-reborndev.com;
+
+              ssl_certificate /etc/nginx/ssl/monitoring.crt;
+              ssl_certificate_key /etc/nginx/ssl/monitoring.key;
 
               location / {
                   proxy_pass http://localhost:3000;
@@ -228,6 +241,12 @@
                   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                   proxy_set_header X-Forwarded-Proto $scheme;
               }
+          }
+
+          server {
+              listen 80;
+              server_name monitor.syntax-reborndev.com;
+              return 301 https://$host$request_uri;
           }
 
     - name: Aktiver Nginx site
