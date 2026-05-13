@@ -95,3 +95,64 @@ jobs:
             echo "=== Restarting nginx to refresh DNS ==="
             sudo docker restart tls-nginx-1
             sudo docker image prune -f
+  smoke-test:
+    name: Smoke Test
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Wait for app to be ready
+        run: |
+          echo "Waiting for app to come up..."
+          for i in $(seq 1 12); do
+            if curl -sf https://syntax-reborndev.com/health > /dev/null; then
+              echo "App is up!"
+              exit 0
+            fi
+            echo "Attempt $i/12 – retrying in 10s..."
+            sleep 10
+          done
+          echo "App did not respond after 2 minutes"
+          exit 1
+
+      - name: Write smoke test config
+        run: |
+          cat > tools/endpoint-sim/config.smoke.json << 'EOF'
+          {
+            "report_every_s": 15,
+            "http": {
+              "bot_count": 3,
+              "interval_ms": 2000,
+              "endpoints": [
+                { "method": "GET", "url": "https://syntax-reborndev.com/health" },
+                { "method": "GET", "url": "https://syntax-reborndev.com/api/search?q=devops&language=en" },
+                { "method": "GET", "url": "https://syntax-reborndev.com/about" }
+              ]
+            },
+            "db": { "driver": "postgres", "dsn": "", "bot_count": 0, "interval_ms": 5000 },
+            "user_bots": { "enabled": false, "base_url": "", "credentials": [], "normal": { "count": 0, "searches_per_session": 0, "pause_ms": 0, "loop_delay_ms": 0 }, "heavy": { "count": 0, "searches_per_session": 0, "pause_ms": 0, "loop_delay_ms": 0 }, "session": { "count": 0, "loop_delay_ms": 0 } },
+            "load_test": { "enabled": false, "urls": [], "concurrent": 0, "total_requests": 0 }
+          }
+          EOF
+
+      - name: Run smoke test (60s)
+        run: |
+          cd tools/endpoint-sim
+          go mod tidy
+          timeout 60 go run main.go config.smoke.json || true
+
+      - name: Verify health endpoint
+        run: |
+          STATUS=$(curl -sf -o /dev/null -w "%{http_code}" https://syntax-reborndev.com/health)
+          if [ "$STATUS" != "200" ]; then
+            echo "Health check failed with status $STATUS"
+            exit 1
+          fi
+          echo "Health check passed – HTTP $STATUS"
