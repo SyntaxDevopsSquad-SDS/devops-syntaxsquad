@@ -1,6 +1,6 @@
 # SyntaxDevopsSquad - WhoKnows Migration Project
 
-Welcome to the **SyntaxDevopsSquad** main repository. This project is part of our 2026 DevOps module at KEA, focusing on migrating a legacy Python Flask application to Go while learning DevOps practices including automation, CI/CD, and infrastructure as code.
+Welcome to the **SyntaxDevopsSquad** main repository. This project is part of our 2026 DevOps module at EK, focusing on migrating a legacy Python Flask application to Go while learning DevOps practices including automation, CI/CD, and infrastructure as code.
 
 ## Live Application
 
@@ -36,7 +36,6 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 - **Language:** Go 1.25.0
 - **Database:** PostgreSQL 16 with `github.com/lib/pq`
 - **Session Management:** Gorilla Sessions
-- **Legacy:** Python Flask (original implementation, kept for reference)
 
 ### Infrastructure & DevOps
 - **Cloud Platforms:** Azure (app VM) + DigitalOcean (monitoring VM)
@@ -81,47 +80,39 @@ devops-syntaxsquad/
 │       ├── monitoring_repo_prompt.md
 │       └── technical_audit.md           # Technical audit report
 ├── implementations/
-│   ├── go/                              # Active Go implementation
-│   │   ├── Dockerfile
-│   │   ├── go.mod
-│   │   ├── schema.sql
-│   │   ├── backend/
-│   │   │   ├── main.go
-│   │   │   ├── routes.go
-│   │   │   ├── routes_test.go
-│   │   │   ├── database.go
-│   │   │   ├── database_test.go
-│   │   │   ├── integration_test.go
-│   │   │   ├── middleware.go
-│   │   │   ├── migrations.go
-│   │   │   ├── metrics.go
-│   │   │   ├── metrics_test.go
-│   │   │   ├── security.go
-│   │   │   ├── security_test.go
-│   │   │   └── entrypoint.sh
-│   │   ├── scripts/
-│   │   │   ├── deploy.sh
-│   │   │   ├── deploy_compose.sh
-│   │   │   ├── migration.sh
-│   │   │   ├── setup.sh
-│   │   │   └── breach_response.sh
-│   │   ├── static/
-│   │   │   └── style.css
-│   │   └── templates/
-│   │       ├── layout.html
-│   │       ├── search.html
-│   │       ├── login.html
-│   │       ├── register.html
-│   │       ├── reset-password.html
-│   │       └── about.html
-│   └── python/                          # Legacy Flask implementation (reference only)
-│       ├── Makefile
+│   └── go/                              # Active Go implementation
+│       ├── Dockerfile
+│       ├── go.mod
 │       ├── schema.sql
-│       ├── run_forever.sh
-│       └── backend/
-│           ├── app.py
-│           ├── app_tests.py
-│           └── requirements.txt
+│       ├── backend/
+│       │   ├── main.go
+│       │   ├── routes.go
+│       │   ├── routes_test.go
+│       │   ├── database.go
+│       │   ├── database_test.go
+│       │   ├── integration_test.go
+│       │   ├── middleware.go
+│       │   ├── migrations.go
+│       │   ├── metrics.go
+│       │   ├── metrics_test.go
+│       │   ├── security.go
+│       │   ├── security_test.go
+│       │   └── entrypoint.sh
+│       ├── scripts/
+│       │   ├── deploy.sh
+│       │   ├── deploy_compose.sh
+│       │   ├── migration.sh
+│       │   ├── setup.sh
+│       │   └── breach_response.sh
+│       ├── static/
+│       │   └── style.css
+│       └── templates/
+│           ├── layout.html
+│           ├── search.html
+│           ├── login.html
+│           ├── register.html
+│           ├── reset-password.html
+│           └── about.html
 ├── terraform/
 │   ├── main.tf                          # Azure app VM + Cloudflare DNS
 │   ├── monitoring.tf                    # DigitalOcean monitoring VM + DO Volume attachment
@@ -325,6 +316,20 @@ The monitoring VM runs a cron job every 5 minutes that checks `GET /health` on t
 
 ---
 
+## Simulation & Testing
+
+Automated browser-based simulation is handled by a dedicated tool in a separate repository:
+
+**[whoknows-crawler](https://github.com/SyntaxDevopsSquad-SDS/whoknows-crawler)** – an intelligent Playwright crawler that self-registers bot users and continuously tests endpoints, user flows and response validation against the live application. No manual seeding required – bots find the registration form, create their own accounts and start interacting autonomously.
+
+| Bot type | Count | Behaviour |
+|---|---|---|
+| Normal | 10 | Login → search 3 times with realistic pauses → logout |
+| Heavy | 5 | Login → search 10 times rapidly → logout |
+| Session | 5 | Login → logout immediately, stressing session handling |
+
+---
+
 ## Development Workflow
 
 ### Git Commit Conventions
@@ -412,6 +417,7 @@ go test ./...
 - [x] Grafana dashboard provisioning via Ansible
 - [x] Watchdog auto-recovery via cron + SSH
 - [x] Health endpoint (`/health`)
+- [x] Intelligent browser-based simulation ([whoknows-crawler](https://github.com/SyntaxDevopsSquad-SDS/whoknows-crawler))
 
 ---
 
@@ -427,10 +433,10 @@ go test ./...
 
 ## License
 
-This project is part of KEA's DevOps module 2026.
+This project is part of EK's DevOps module 2026.
 
 ---
 
 **Course:** DevOps 2026
-**Institution:** EK Kobenhavn
+**Institution:** EK København
 **Instructor:** Anders Latif
