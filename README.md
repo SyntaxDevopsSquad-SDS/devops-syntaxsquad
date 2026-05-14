@@ -1,6 +1,6 @@
 # SyntaxDevopsSquad - WhoKnows Migration Project
 
-Welcome to the **SyntaxDevopsSquad** main repository. This project is part of our 2026 DevOps module at KEA, focusing on migrating a legacy Python Flask application to Go while learning DevOps practices including automation, CI/CD, and infrastructure as code.
+Welcome to the **SyntaxDevopsSquad** main repository. This project is part of our 2026 DevOps module at EK, focusing on migrating a legacy Python Flask application to Go while learning DevOps practices including automation, CI/CD, and infrastructure as code.
 
 ## Live Application
 
@@ -72,84 +72,100 @@ devops-syntaxsquad/
 ├── README.md
 ├── docker-compose.yml                   # Development environment
 ├── docker-compose.prod.yml              # Production environment
+├── .env.example                         # Required environment variable template
+├── .pre-commit-config.yaml              # Pre-commit hooks (lint, format)
 ├── docs/
+│   ├── pipeline-overview.puml           # DevOps lifecycle diagram (PlantUML source)
+│   ├── Pipeline.png                     # Rendered pipeline diagram
 │   ├── openapi.yaml                     # API specification
 │   └── mandatory/
 │       ├── BRANCHING_STRATEGY.md        # Git branching documentation
-│       ├── dependency_graph.dot         # System architecture (source)
+│       ├── dependency_graph.dot         # System architecture (Graphviz source)
+│       ├── dependency_graph_picture.svg # Rendered architecture diagram
 │       ├── mandatory_ii.md              # DevOps reflection task II
 │       ├── monitoring_repo_prompt.md
 │       └── technical_audit.md           # Technical audit report
 ├── implementations/
-│   ├── go/                              # Active Go implementation
-│   │   ├── Dockerfile
-│   │   ├── go.mod
-│   │   ├── schema.sql
-│   │   ├── backend/
-│   │   │   ├── main.go
-│   │   │   ├── routes.go
-│   │   │   ├── routes_test.go
-│   │   │   ├── database.go
-│   │   │   ├── database_test.go
-│   │   │   ├── integration_test.go
-│   │   │   ├── middleware.go
-│   │   │   ├── migrations.go
-│   │   │   ├── metrics.go
-│   │   │   ├── metrics_test.go
-│   │   │   ├── security.go
-│   │   │   ├── security_test.go
-│   │   │   └── entrypoint.sh
-│   │   ├── scripts/
-│   │   │   ├── deploy.sh
-│   │   │   ├── deploy_compose.sh
-│   │   │   ├── migration.sh
-│   │   │   ├── setup.sh
-│   │   │   └── breach_response.sh
-│   │   ├── static/
-│   │   │   └── style.css
-│   │   └── templates/
-│   │       ├── layout.html
-│   │       ├── search.html
-│   │       ├── login.html
-│   │       ├── register.html
-│   │       ├── reset-password.html
-│   │       └── about.html
-│   └── python/                          # Legacy Flask implementation (reference only)
-│       ├── Makefile
+│   └── go/                              # Active Go implementation
+│       ├── Dockerfile
+│       ├── go.mod
+│       ├── go.sum
 │       ├── schema.sql
-│       ├── run_forever.sh
-│       └── backend/
-│           ├── app.py
-│           ├── app_tests.py
-│           └── requirements.txt
+│       ├── backend/
+│       │   ├── main.go
+│       │   ├── routes.go
+│       │   ├── routes_test.go
+│       │   ├── database.go
+│       │   ├── database_test.go
+│       │   ├── integration_test.go
+│       │   ├── middleware.go
+│       │   ├── migrations.go
+│       │   ├── metrics.go
+│       │   ├── metrics_test.go
+│       │   ├── security.go
+│       │   ├── security_test.go
+│       │   └── entrypoint.sh
+│       ├── scripts/
+│       │   ├── deploy.sh
+│       │   ├── deploy_compose.sh
+│       │   ├── migration.sh
+│       │   ├── setup.sh
+│       │   └── breach_response.sh
+│       ├── static/
+│       │   ├── style.css
+│       │   └── monkgroup.png
+│       └── templates/
+│           ├── layout.html
+│           ├── search.html
+│           ├── login.html
+│           ├── register.html
+│           ├── reset-password.html
+│           └── about.html
 ├── terraform/
 │   ├── main.tf                          # Azure app VM + Cloudflare DNS
 │   ├── monitoring.tf                    # DigitalOcean monitoring VM + DO Volume attachment
 │   ├── outputs.tf
 │   ├── variables.tf
-│   ├── terraform.tfvars.example
+│   ├── terraform.tfvars                 # Local secrets (gitignored)
+│   ├── terraform.tfvars.example         # Template for tfvars
 │   ├── scripts/
+│   │   ├── bootstrap-tfstate.sh         # One-time: create Azure Blob Storage til Terraform state
 │   │   ├── bootstrap-disk.sh            # One-time: create Azure Managed Disk (Postgres)
 │   │   └── bootstrap-do-volume.sh       # One-time: create DO Volume (Prometheus)
 │   └── ansible/
-│       ├── playbook.yml                 # App VM setup
-│       ├── monitoring-playbook.yml      # Monitoring VM setup
+│       ├── playbook.yml                 # App VM setup (Docker, nginx, fail2ban, UFW)
+│       ├── monitoring-playbook.yml      # Monitoring VM setup (Prometheus + Grafana)
+│       ├── inventory.ini                # App VM host (auto-generated by Terraform)
+│       ├── monitoring-inventory.ini     # Monitoring VM host
 │       ├── deploy.sh                    # Full deploy (Terraform + both Ansible playbooks)
+│       ├── destroy.sh                   # Teardown script
+│       ├── WSL-COMMANDS.txt             # Quick reference for WSL commands
 │       └── grafana-provisioning/        # Auto-provisioned datasource + dashboards
 │           ├── datasources/
 │           │   └── prometheus.yml
-│           └── dashboards/
-│               ├── dashboard.yml
-│               ├── whoknows-auth.json
-│               ├── whoknows-requests.json
-│               └── whoknows-overview.json
+│           ├── dashboards/
+│           │   ├── dashboard.yml
+│           │   ├── whoknows-auth.json
+│           │   ├── whoknows-business.json
+│           │   ├── whoknows-requests.json
+│           │   └── whoknows-overview.json
+│           └── alerting/
+│               ├── alert-rules.yml      # App Down, Error Rate, Login Failure alerts
+│               ├── contact-points.yml   # Discord webhook notification channel
+│               └── notification-policy.yml
 ├── server-config/
-│   └── fail2ban-jail.local              # Server security configuration
+│   └── fail2ban-jail.local              # fail2ban rules (SSH + nginx protection)
 └── .github/
+    ├── dependabot.yml                   # Automated dependency updates
+    ├── pull_request_template.md         # PR checklist template
+    ├── ISSUE_TEMPLATE/
+    │   ├── bug.report.md
+    │   └── task.md
     └── workflows/
-        ├── ci.yml                       # Continuous Integration
-        ├── cd.yml                       # Continuous Deployment
-        └── dependabot-auto-merge.yml
+        ├── ci.yml                       # CI: build, lint, test, DB validation (on PR)
+        ├── cd.yml                       # CD: build image, deploy to VM (on merge)
+        ├── smoke-test.yml               # Smoke test after CD (HTTP 200 check)
+        └── dependabot-auto-merge.yml    # Auto-approve + squash merge Dependabot PRs
 ```
 
 ---
@@ -256,14 +272,25 @@ Use `CSRF_RELAXED=false` in normal/prod operation. Enable `CSRF_RELAXED=true` on
 
 ### First-time setup (run once)
 
+> These scripts create persistent resources that live **outside Terraform** and survive `terraform destroy`.
+
 ```bash
+# 0. Create Azure Storage Account for Terraform remote state (before terraform init)
+bash terraform/scripts/bootstrap-tfstate.sh <your-subscription-id>
+
 # 1. Create persistent Azure Managed Disk (Postgres data)
-bash terraform/scripts/bootstrap-disk.sh
+bash terraform/scripts/bootstrap-disk.sh <your-subscription-id>
 
 # 2. Create persistent DigitalOcean Volume (Prometheus data)
 doctl auth init
 bash terraform/scripts/bootstrap-do-volume.sh
 ```
+
+| Script | Opretter | Overlever destroy? |
+|--------|----------|-------------------|
+| `bootstrap-tfstate.sh` | Azure Storage Account (`whoknowstfstate`) + container til tfstate | ✅ Ja |
+| `bootstrap-disk.sh` | Azure Managed Disk (`whoknows-postgres-data`, 32 GB) | ✅ Ja |
+| `bootstrap-do-volume.sh` | DigitalOcean Volume (`whoknows-prometheus-data`, 20 GiB) | ✅ Ja |
 
 ### Deploy everything
 
@@ -427,7 +454,7 @@ go test ./...
 
 ## License
 
-This project is part of KEA's DevOps module 2026.
+This project is part of EK's DevOps module 2026.
 
 ---
 
