@@ -177,10 +177,12 @@
                 - GF_SECURITY_ADMIN_USER=admin
                 - GF_SECURITY_ADMIN_PASSWORD={{ grafana_password }}
                 - GF_SERVER_ROOT_URL=https://monitor.syntax-reborndev.com
+                - DISCORD_WEBHOOK_URL={{ discord_webhook_url }}
               volumes:
                 - grafana-data:/var/lib/grafana
                 - ./grafana-provisioning/datasources:/etc/grafana/provisioning/datasources:ro
                 - ./grafana-provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+                - ./grafana-provisioning/alerting:/etc/grafana/provisioning/alerting:ro
               depends_on:
                 - prometheus
               restart: unless-stopped
@@ -189,9 +191,13 @@
             grafana-data:
 
     - name: Stop monitoring stack (hvis kørende)
-      shell: docker compose down -v
+      shell: docker compose down
       args:
         chdir: /opt/monitoring
+      failed_when: false
+
+    - name: Slet gammelt grafana-data volume (undgår SQLite migrations-konflikt)
+      shell: docker volume rm -f monitoring_grafana-data
       failed_when: false
 
     - name: Start monitoring stack
@@ -199,17 +205,12 @@
       args:
         chdir: /opt/monitoring
 
-    - name: Vent på Grafana er klar og reset password
-      shell: |
-        for i in $(seq 1 30); do
-          if docker exec monitoring-grafana-1 /usr/share/grafana/bin/grafana cli admin reset-admin-password "{{ grafana_password }}" 2>/dev/null; then
-            exit 0
-          fi
-          sleep 5
-        done
-        exit 1
-      args:
-        chdir: /opt/monitoring
+    - name: Vent på Grafana HTTP port er klar
+      wait_for:
+        host: localhost
+        port: 3000
+        timeout: 120
+        delay: 5
 
     # ─── Nginx reverse proxy → Grafana ─────────────────────────────────────────
     - name: Generer self-signed SSL certifikat til Nginx
