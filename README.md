@@ -36,7 +36,6 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 - **Language:** Go 1.25.0
 - **Database:** PostgreSQL 16 with `github.com/lib/pq`
 - **Session Management:** Gorilla Sessions
-- **Legacy:** Python Flask (original implementation, kept for reference)
 
 ### Infrastructure & DevOps
 - **Cloud Platforms:** Azure (app VM) + DigitalOcean (monitoring VM)
@@ -352,6 +351,20 @@ The monitoring VM runs a cron job every 5 minutes that checks `GET /health` on t
 
 ---
 
+## Simulation & Testing
+
+Automated browser-based simulation is handled by a dedicated tool in a separate repository:
+
+**[whoknows-crawler](https://github.com/SyntaxDevopsSquad-SDS/whoknows-crawler)** – an intelligent Playwright crawler that self-registers bot users and continuously tests endpoints, user flows and response validation against the live application. No manual seeding required – bots find the registration form, create their own accounts and start interacting autonomously.
+
+| Bot type | Count | Behaviour |
+|---|---|---|
+| Normal | 10 | Login → search 3 times with realistic pauses → logout |
+| Heavy | 5 | Login → search 10 times rapidly → logout |
+| Session | 5 | Login → logout immediately, stressing session handling |
+
+---
+
 ## Development Workflow
 
 ### Git Commit Conventions
@@ -439,6 +452,7 @@ go test ./...
 - [x] Grafana dashboard provisioning via Ansible
 - [x] Watchdog auto-recovery via cron + SSH
 - [x] Health endpoint (`/health`)
+- [x] Intelligent browser-based simulation ([whoknows-crawler](https://github.com/SyntaxDevopsSquad-SDS/whoknows-crawler))
 
 ---
 
@@ -459,5 +473,5 @@ This project is part of EK's DevOps module 2026.
 ---
 
 **Course:** DevOps 2026
-**Institution:** EK Kobenhavn
+**Institution:** EK København
 **Instructor:** Anders Latif
