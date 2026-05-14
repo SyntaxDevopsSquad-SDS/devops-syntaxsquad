@@ -44,7 +44,7 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 - **Infrastructure as Code:** Terraform (Azure VM, network, firewall, DigitalOcean droplet, Cloudflare DNS)
 - **Configuration Management:** Ansible (Docker, Nginx, fail2ban, UFW, swap, disk mount)
 - **DNS:** Cloudflare (automatic A-record update on deploy)
-- **Persistent Storage:** Azure Managed Disk (Postgres data), DigitalOcean Volume (Prometheus data) — both managed outside Terraform lifecycle
+- **Persistent Storage:** Azure Managed Disk (Postgres data), DigitalOcean Volume (Prometheus data) - both managed outside Terraform lifecycle
 - **Remote State:** Terraform state stored in Azure Blob Storage
 - **Server Security:** fail2ban, UFW
 - **Linting:** `golangci-lint`
@@ -55,7 +55,7 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 ### Monitoring Stack
 - **Metrics:** Prometheus (scrapes `/metrics` on app VM port 8080)
 - **Dashboards:** Grafana (auto-provisioned with datasource + 3 dashboards via Ansible)
-- **Watchdog:** Cron job on monitoring VM — checks `/health` every 5 minutes, auto-restarts app via SSH after 3 consecutive failures
+- **Watchdog:** Cron job on monitoring VM - checks `/health` every 5 minutes, auto-restarts app via SSH after 3 consecutive failures
 - **Deployment:** Separate DigitalOcean VM for resilience (survives Azure app VM destroy)
 
 ### Database Schema
@@ -180,7 +180,7 @@ devops-syntaxsquad/
 - WSL/Linux environment (for Windows users)
 
 **For infrastructure deployment:**
-- Azure CLI (`az`) — authenticated
+- Azure CLI (`az`) - authenticated
 - Terraform
 - Ansible (WSL only)
 - `doctl` (DigitalOcean CLI)
@@ -309,7 +309,7 @@ cd terraform
 terraform destroy -auto-approve
 ```
 
-Postgres and Prometheus data are **not deleted** — they live on persistent disks outside Terraform.
+Postgres and Prometheus data are **not deleted**. They live on persistent disks outside Terraform.
 
 ---
 
@@ -317,7 +317,7 @@ Postgres and Prometheus data are **not deleted** — they live on persistent dis
 
 The Go backend exposes metrics at `GET /metrics` (port 8080) and a health check at `GET /health`.
 
-Prometheus and Grafana run on a separate DigitalOcean VM. Grafana dashboards and the Prometheus datasource are auto-provisioned via Ansible on every deploy — no manual setup required.
+Prometheus and Grafana run on a separate DigitalOcean VM. Grafana dashboards and the Prometheus datasource are auto-provisioned via Ansible on every deploy, no manual setup required.
 
 Live Grafana dashboard: [https://monitor.syntax-reborndev.com/](https://monitor.syntax-reborndev.com/)
 
@@ -334,23 +334,23 @@ Live Grafana dashboard: [https://monitor.syntax-reborndev.com/](https://monitor.
 
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
-| `whoknows_login_attempts_total` | Counter | `outcome` | Login attempts — `success\|failure` |
-| `whoknows_registrations_total` | Counter | `outcome` | Registrations — `success\|validation_error\|failure` |
-| `whoknows_active_sessions` | Gauge | — | Users currently logged in (fra PostgreSQL sessions-tabel, opdateret hvert 30s) |
-| `whoknows_session_duration_seconds` | Histogram | — | Sessionsvarighed fra login til logout (buckets: 30s–2h) |
+| `whoknows_login_attempts_total` | Counter | `outcome` | Login attempts (`success\|failure`) |
+| `whoknows_registrations_total` | Counter | `outcome` | Registrations (`success\|validation_error\|failure`) |
+| `whoknows_active_sessions` | Gauge | - | Users currently logged in (fra PostgreSQL sessions-tabel, opdateret hvert 30s) |
+| `whoknows_session_duration_seconds` | Histogram | - | Sessionsvarighed fra login til logout (buckets: 30s-2h) |
 
 #### Search
 
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
-| `whoknows_searches_total` | Counter | `source`, `language`, `query`, `outcome` | Søgninger — `source: web\|api`, `outcome: success\|failure` |
-| `whoknows_search_zero_results_total` | Counter | `language` | Søgninger der returnerede 0 resultater — indikerer content gaps |
+| `whoknows_searches_total` | Counter | `source`, `language`, `query`, `outcome` | Søgninger (`source: web\|api`, `outcome: success\|failure`) |
+| `whoknows_search_zero_results_total` | Counter | `language` | Søgninger der returnerede 0 resultater (indikerer content gaps) |
 
 #### Business
 
 | Metric | Type | Labels | Description |
 |--------|------|--------|-------------|
-| `whoknows_registered_users_total` | Gauge | — | Antal registrerede brugere i databasen (opdateret hvert 30s) |
+| `whoknows_registered_users_total` | Gauge | - | Antal registrerede brugere i databasen (opdateret hvert 30s) |
 
 ### Prometheus Query Examples
 
@@ -389,7 +389,7 @@ The monitoring VM runs a cron job every 5 minutes that checks `GET /health` on t
 
 Automated browser-based simulation is handled by a dedicated tool in a separate repository:
 
-**[whoknows-crawler](https://github.com/SyntaxDevopsSquad-SDS/whoknows-crawler)** – an intelligent Playwright crawler that self-registers bot users and continuously tests endpoints, user flows and response validation against the live application. No manual seeding required – bots find the registration form, create their own accounts and start interacting autonomously.
+**[whoknows-crawler](https://github.com/SyntaxDevopsSquad-SDS/whoknows-crawler)** is an intelligent Playwright crawler that self-registers bot users and continuously tests endpoints, user flows and response validation against the live application. No manual seeding required - bots find the registration form, create their own accounts and start interacting autonomously.
 
 | Bot type | Count | Behaviour |
 |---|---|---|
