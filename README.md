@@ -323,26 +323,60 @@ Live Grafana dashboard: [https://monitor.syntax-reborndev.com/](https://monitor.
 
 ### Available Metrics
 
-- `whoknows_http_requests_total{method,path,status}`
-- `whoknows_http_request_duration_seconds{method,path}`
-- `whoknows_login_attempts_total{outcome}` — `success|failure`
-- `whoknows_registrations_total{outcome}` — `success|validation_error|failure`
-- `whoknows_searches_total{source,language,query,outcome}` — `source: web|api`, `outcome: success|failure`
+#### HTTP
+
+| Metric | Type | Labels | Description |
+|--------|------|--------|-------------|
+| `whoknows_http_requests_total` | Counter | `method`, `path`, `status` | Total HTTP requests received |
+| `whoknows_http_request_duration_seconds` | Histogram | `method`, `path` | Request latency (default buckets) |
+
+#### Authentication
+
+| Metric | Type | Labels | Description |
+|--------|------|--------|-------------|
+| `whoknows_login_attempts_total` | Counter | `outcome` | Login attempts — `success\|failure` |
+| `whoknows_registrations_total` | Counter | `outcome` | Registrations — `success\|validation_error\|failure` |
+| `whoknows_active_sessions` | Gauge | — | Users currently logged in (fra PostgreSQL sessions-tabel, opdateret hvert 30s) |
+| `whoknows_session_duration_seconds` | Histogram | — | Sessionsvarighed fra login til logout (buckets: 30s–2h) |
+
+#### Search
+
+| Metric | Type | Labels | Description |
+|--------|------|--------|-------------|
+| `whoknows_searches_total` | Counter | `source`, `language`, `query`, `outcome` | Søgninger — `source: web\|api`, `outcome: success\|failure` |
+| `whoknows_search_zero_results_total` | Counter | `language` | Søgninger der returnerede 0 resultater — indikerer content gaps |
+
+#### Business
+
+| Metric | Type | Labels | Description |
+|--------|------|--------|-------------|
+| `whoknows_registered_users_total` | Gauge | — | Antal registrerede brugere i databasen (opdateret hvert 30s) |
 
 ### Prometheus Query Examples
 
 ```promql
-# Total HTTP requests in the last 5 minutes
-sum(increase(whoknows_http_requests_total[5m]))
+# HTTP request rate de seneste 5 minutter
+sum(rate(whoknows_http_requests_total[5m]))
 
-# Successful logins in the last 1 hour
-increase(whoknows_login_attempts_total{outcome="success"}[1h])
+# 5xx fejlrate i %
+rate(whoknows_http_requests_total{status=~"5.."}[5m])
+/ rate(whoknows_http_requests_total[5m]) * 100
 
-# Successful registrations in the last 1 hour
-increase(whoknows_registrations_total{outcome="success"}[1h])
+# 95. percentil responstid
+histogram_quantile(0.95, rate(whoknows_http_request_duration_seconds_bucket[5m]))
 
-# Searches for a specific term in the last 1 hour
-increase(whoknows_searches_total{query="fortran"}[1h])
+# Login fejlrate i % (de seneste 5 min)
+rate(whoknows_login_attempts_total{outcome="failure"}[5m])
+/ (rate(whoknows_login_attempts_total[5m]) + 0.001) * 100
+
+# Aktive sessioner lige nu
+whoknows_active_sessions
+
+# Søgninger der returnerede 0 resultater per sprog
+sum by (language) (increase(whoknows_search_zero_results_total[1h]))
+
+# Antal registrerede brugere
+whoknows_registered_users_total
 ```
 
 ### Watchdog
