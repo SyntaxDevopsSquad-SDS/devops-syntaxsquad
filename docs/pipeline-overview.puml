@@ -1,0 +1,34 @@
+@startuml DevOps_Lifecycle_Overview
+
+left to right direction
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam ArrowColor #374151
+skinparam ArrowThickness 2
+
+skinparam rectangle {
+  FontColor #111827
+  RoundCorner 10
+  FontSize 11
+}
+
+rectangle "1 · PLAN\n...........\nGitHub Issues\nBranching Strategy\nDependabot config\nOpenAPI spec" as PLAN #E8F5E9
+rectangle "2 · CODE\n...........\nFeature branches\nPull Request to main\nDependabot PRs\nGo + PostgreSQL" as CODE #E3F2FD
+rectangle "3 · BUILD\n...........\ngo build\nDocker Buildx\nPush to GHCR\n:latest + :sha" as BUILD #FFF8E1
+rectangle "4 · TEST\n...........\ngo vet + gofmt\ngolangci-lint\ngo test -race\nDB schema validation\nQuality Gate" as TEST #FCE4EC
+rectangle "5 · RELEASE\n...........\nMerge to main\nGHCR image versioned\nworkflow_dispatch\nSmoke Test HTTP 200" as RELEASE #EDE7F6
+rectangle "6 · DEPLOY\n...........\nSCP to Azure VM\ndocker compose up\nRestart nginx\ndeploy_compose.sh" as DEPLOY #E0F7FA
+rectangle "7 · OPERATE\n...........\nAzure VM (app)\nDigitalOcean (monitoring)\nPostgreSQL + disk\nNginx TLS + fail2ban" as OPERATE #FFF3E0
+rectangle "8 · MONITOR\n...........\nPrometheus scrape\nGrafana dashboards\nApp Down alert\nError Rate alert\nDiscord notify" as MONITOR #F3E5F5
+
+PLAN    --> CODE
+CODE    --> BUILD
+BUILD   --> TEST
+TEST    --> RELEASE
+RELEASE --> DEPLOY
+DEPLOY  --> OPERATE
+OPERATE --> MONITOR
+MONITOR ..> PLAN : feedback loop
+
+@enduml
