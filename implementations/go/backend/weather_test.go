@@ -137,7 +137,7 @@ func TestWeatherHandler(t *testing.T) {
 		geoSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			callCount++
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprint(w, `{"results":[{"name":"Copenhagen","latitude":55.6761,"longitude":12.5683}]}`)
+			_, _ = fmt.Fprint(w, `{"results":[{"name":"Copenhagen","latitude":55.6761,"longitude":12.5683}]}`)
 		}))
 		defer geoSrv.Close()
 		wxSrv := mockWeatherServer(t)
