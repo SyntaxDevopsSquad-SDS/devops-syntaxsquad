@@ -123,13 +123,13 @@ func getWeatherForCity(city string) (*WeatherData, error) {
 	lat, lon, err := fetchCoordinates(city)
 	if err != nil {
 		log.Printf("fetchCoordinates error for %q: %v", city, err)
-		return nil, fmt.Errorf("City not found")
+		return nil, fmt.Errorf("city not found")
 	}
 
 	wd, err := fetchWeather(lat, lon)
 	if err != nil {
 		log.Printf("fetchWeather error for %q: %v", city, err)
-		return nil, fmt.Errorf("Could not fetch weather data")
+		return nil, fmt.Errorf("could not fetch weather data")
 	}
 
 	wd.City = city
