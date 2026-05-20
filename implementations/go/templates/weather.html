@@ -1,0 +1,22 @@
+{{ define "content" }}
+<h1>Weather</h1>
+
+<form action="/weather" method="GET">
+    <label for="city-input">City:</label>
+    <input type="text" id="city-input" name="city" value="{{ .City }}" placeholder="Enter city name...">
+    <button type="submit">Get Weather</button>
+</form>
+
+{{ if .Error }}
+<div class="error"><strong>Error:</strong> {{ .Error }}</div>
+{{ end }}
+
+{{ if .Weather }}
+<div id="weather-result">
+    <h2>{{ .Weather.City }}</h2>
+    <p>Temperature: {{ .Weather.Temperature }} &deg;C</p>
+    <p>Wind speed: {{ .Weather.Windspeed }} km/h</p>
+    <p>Weather code: {{ .Weather.Weathercode }}</p>
+</div>
+{{ end }}
+{{ end }}
