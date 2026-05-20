@@ -20,7 +20,7 @@ func mockGeoServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, `{"results":[{"name":"Copenhagen","latitude":55.6761,"longitude":12.5683}]}`)
+		_, _ = fmt.Fprint(w, `{"results":[{"name":"Copenhagen","latitude":55.6761,"longitude":12.5683}]}`)
 	}))
 }
 
@@ -28,7 +28,7 @@ func mockWeatherServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, `{"current_weather":{"temperature":15.5,"windspeed":10.2,"weathercode":1},"hourly":{"temperature_2m":[15.5],"weathercode":[1]}}`)
+		_, _ = fmt.Fprint(w, `{"current_weather":{"temperature":15.5,"windspeed":10.2,"weathercode":1},"hourly":{"temperature_2m":[15.5],"weathercode":[1]}}`)
 	}))
 }
 
@@ -88,7 +88,7 @@ func TestWeatherHandler(t *testing.T) {
 		geoSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			callCount++
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprint(w, `{"results":[{"name":"Copenhagen","latitude":55.6761,"longitude":12.5683}]}`)
+			_, _ = fmt.Fprint(w, `{"results":[{"name":"Copenhagen","latitude":55.6761,"longitude":12.5683}]}`)
 		}))
 		defer geoSrv.Close()
 		wxSrv := mockWeatherServer(t)
