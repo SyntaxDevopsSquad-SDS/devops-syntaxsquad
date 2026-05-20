@@ -149,6 +149,8 @@ jobs:
           done
       - name: Smoke test /weather
         run: |
+          curl -v http://localhost:8080/weather || true
+          curl -v "http://localhost:8080/weather?city=Copenhagen" || true
           curl -sf http://localhost:8080/weather
           curl -sf "http://localhost:8080/weather?city=Copenhagen"
 
