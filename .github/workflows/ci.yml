@@ -142,15 +142,13 @@ jobs:
       - name: Build and start server
         run: |
           go build -o whoknows-server ./backend/...
-          ./whoknows-server &
+          cd backend && ../whoknows-server &
           for i in $(seq 1 15); do
             curl -sf http://localhost:8080/health && break
             sleep 2
           done
       - name: Smoke test /weather
         run: |
-          curl -v http://localhost:8080/weather || true
-          curl -v "http://localhost:8080/weather?city=Copenhagen" || true
           curl -sf http://localhost:8080/weather
           curl -sf "http://localhost:8080/weather?city=Copenhagen"
 
