@@ -110,6 +110,36 @@ func fetchWeather(lat, lon float64) (WeatherData, error) {
 	}, nil
 }
 
+func getWeatherForCity(city string) (*WeatherData, error) {
+	weatherCacheMu.RLock()
+	cached, ok := weatherCache[city]
+	weatherCacheMu.RUnlock()
+
+	if ok && time.Since(cached.fetchedAt) < weatherCacheTTL {
+		wd := cached.data
+		return &wd, nil
+	}
+
+	lat, lon, err := fetchCoordinates(city)
+	if err != nil {
+		log.Printf("fetchCoordinates error for %q: %v", city, err)
+		return nil, fmt.Errorf("City not found")
+	}
+
+	wd, err := fetchWeather(lat, lon)
+	if err != nil {
+		log.Printf("fetchWeather error for %q: %v", city, err)
+		return nil, fmt.Errorf("Could not fetch weather data")
+	}
+
+	wd.City = city
+	weatherCacheMu.Lock()
+	weatherCache[city] = cachedWeather{data: wd, fetchedAt: time.Now()}
+	weatherCacheMu.Unlock()
+
+	return &wd, nil
+}
+
 func weatherHandler(w http.ResponseWriter, r *http.Request) {
 	city := r.URL.Query().Get("city")
 
@@ -119,33 +149,11 @@ func weatherHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if city != "" {
-		weatherCacheMu.RLock()
-		cached, ok := weatherCache[city]
-		weatherCacheMu.RUnlock()
-
-		if ok && time.Since(cached.fetchedAt) < weatherCacheTTL {
-			wd := cached.data
-			data.Weather = &wd
+		wd, err := getWeatherForCity(city)
+		if err != nil {
+			data.Error = err.Error()
 		} else {
-			lat, lon, err := fetchCoordinates(city)
-			if err != nil {
-				log.Printf("fetchCoordinates error for %q: %v", city, err)
-				data.Error = "City not found"
-			} else {
-				wd, err := fetchWeather(lat, lon)
-				if err != nil {
-					log.Printf("fetchWeather error for %q: %v", city, err)
-					data.Error = "Could not fetch weather data"
-				} else {
-					wd.City = city
-
-					weatherCacheMu.Lock()
-					weatherCache[city] = cachedWeather{data: wd, fetchedAt: time.Now()}
-					weatherCacheMu.Unlock()
-
-					data.Weather = &wd
-				}
-			}
+			data.Weather = wd
 		}
 	}
 
