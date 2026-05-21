@@ -143,7 +143,7 @@
             evaluation_interval: 15s
 
           scrape_configs:
-            - job_name: 'whoknows-app'
+            - job_name: 'whoknows-go-backend'
               static_configs:
                 - targets: ['{{ app_ip }}:8080']
               metrics_path: '/metrics'
