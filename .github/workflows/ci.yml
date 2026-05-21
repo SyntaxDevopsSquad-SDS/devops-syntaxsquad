@@ -102,12 +102,63 @@ jobs:
             echo "⚠️ No schema.sql found"
           fi
 
+  weather-smoke-test:
+    name: Weather Endpoint Smoke Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs: [go-ci]
+    defaults:
+      run:
+        working-directory: implementations/go
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: whoknows_test
+          POSTGRES_USER: whoknows
+          POSTGRES_PASSWORD: whoknows
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://whoknows:whoknows@localhost:5432/whoknows_test?sslmode=disable
+      SECRET_KEY: test-secret-key-for-ci
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.25"
+          cache: false
+      - name: Apply schema
+        run: |
+          PGPASSWORD=whoknows psql -h localhost -U whoknows -d whoknows_test -f schema.sql
+      - name: Build and start server
+        run: |
+          go build -o whoknows-server ./backend/...
+          cd backend && ../whoknows-server &
+          for i in $(seq 1 15); do
+            curl -sf http://localhost:8080/health && break
+            sleep 2
+          done
+      - name: Smoke test /weather
+        run: |
+          curl -sf http://localhost:8080/weather
+          curl -sf "http://localhost:8080/weather?city=Copenhagen"
+
+
   quality-gate:
     name: Quality Gate
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    needs: [go-ci, database-validation]
+    needs: [go-ci, database-validation, weather-smoke-test]
     steps:
       - name: All checks passed
         run: |
@@ -115,4 +166,5 @@ jobs:
           echo "✅ Go build successful"
           echo "✅ Code quality verified"
           echo "✅ Database schema valid"
+          echo "✅ Weather endpoint smoke test passed"
           echo "Ready to merge!"

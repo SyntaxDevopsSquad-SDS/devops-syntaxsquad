@@ -21,6 +21,7 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 - **Security:** CSRF protection, middleware, and breach response tooling
 - **Database:** PostgreSQL with native full-text search
 - **Health Check:** `GET /health` endpoint for uptime monitoring and watchdog integration
+- **Weather Forecast:** `GET /weather` – city-based weather forecast via Open-Meteo API with in-memory cache (10 min TTL)
 
 ### Team Members
 - **CodeByNajib** (NajibGPT)
@@ -103,6 +104,8 @@ devops-syntaxsquad/
 │       │   ├── metrics_test.go
 │       │   ├── security.go
 │       │   ├── security_test.go
+│       │   ├── weather.go
+│       │   ├── weather_test.go
 │       │   └── entrypoint.sh
 │       ├── scripts/
 │       │   ├── deploy.sh
@@ -119,7 +122,8 @@ devops-syntaxsquad/
 │           ├── login.html
 │           ├── register.html
 │           ├── reset-password.html
-│           └── about.html
+│           ├── about.html
+│           └── weather.html
 ├── terraform/
 │   ├── main.tf                          # Azure app VM + Cloudflare DNS
 │   ├── monitoring.tf                    # DigitalOcean monitoring VM + DO Volume attachment
@@ -487,6 +491,7 @@ go test ./...
 - [x] Watchdog auto-recovery via cron + SSH
 - [x] Health endpoint (`/health`)
 - [x] Intelligent browser-based simulation ([whoknows-crawler](https://github.com/SyntaxDevopsSquad-SDS/whoknows-crawler))
+- [x] Weather forecast endpoint (`/weather`) with Open-Meteo integration, per-city caching and smoke test in CI
 
 ---
 

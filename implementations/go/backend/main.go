@@ -44,6 +44,7 @@ func main() {
 	// 4. Page routes
 	http.HandleFunc("/", searchHandler)
 	http.HandleFunc("/about", aboutHandler)
+	http.HandleFunc("/weather", weatherHandler)
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/logout", logoutHandler)
 	http.HandleFunc("/register", registerHandler)
