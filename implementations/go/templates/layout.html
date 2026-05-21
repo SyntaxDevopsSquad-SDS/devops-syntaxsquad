@@ -13,6 +13,7 @@
     <div class="navigation">
     <nav>
         <h1><a id="nav-logo" href="/search">¿Who Knows?</a></h1>
+        <a id="nav-weather" href="/weather">Weather</a>
         {{ if .User }}
         <a id="nav-logout" href="/logout">Log out [{{ .User }}]</a>
         {{ else }}
@@ -39,6 +40,13 @@
         const path = window.location.pathname;
         const loginLink = document.getElementById("nav-login");
         const registerLink = document.getElementById("nav-register");
+
+        const weatherLink = document.getElementById("nav-weather");
+
+        if (weatherLink && path === "/weather") {
+            weatherLink.classList.add("is-active");
+            weatherLink.setAttribute("aria-current", "page");
+        }
 
         if (loginLink && path === "/login") {
             loginLink.classList.add("is-active");

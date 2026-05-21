@@ -138,6 +138,26 @@ nav a:hover {
     color: #372a9f;
 }
 
+#nav-weather {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid #d7cdfd;
+    background: #f4f1ff;
+    color: #4b3fb8;
+    font-size: 0.92rem;
+}
+
+#nav-weather:hover {
+    background: #ebe5ff;
+    color: #3f32ab;
+}
+
+#nav-weather:active,
+#nav-weather.is-active {
+    background: #e0d7ff;
+    color: #372a9f;
+}
+
 #nav-login.is-active,
 #nav-register.is-active,
 #nav-logout {
