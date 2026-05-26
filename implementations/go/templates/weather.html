@@ -17,6 +17,9 @@
     <p>Temperature: {{ .Weather.Temperature }} &deg;C</p>
     <p>Wind speed: {{ .Weather.Windspeed }} km/h</p>
     <p>Weather code: {{ .Weather.Weathercode }}</p>
+    {{if .Weather.Stale}}
+    <p><em>⚠️ Weather data may be outdated – service temporarily unavailable.</em></p>
+    {{end}}
 </div>
 {{ end }}
 {{ end }}
