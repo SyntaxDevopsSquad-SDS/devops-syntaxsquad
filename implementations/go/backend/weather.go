@@ -40,6 +40,7 @@ type WeatherData struct {
 	Temperature float64
 	Windspeed   float64
 	Weathercode int
+	Stale       bool
 }
 
 type cachedWeather struct {
@@ -123,12 +124,22 @@ func getWeatherForCity(city string) (*WeatherData, error) {
 	lat, lon, err := fetchCoordinates(city)
 	if err != nil {
 		log.Printf("fetchCoordinates error for %q: %v", city, err)
+		if ok {
+			stale := cached.data
+			stale.Stale = true
+			return &stale, nil
+		}
 		return nil, fmt.Errorf("city not found")
 	}
 
 	wd, err := fetchWeather(lat, lon)
 	if err != nil {
 		log.Printf("fetchWeather error for %q: %v", city, err)
+		if ok {
+			stale := cached.data
+			stale.Stale = true
+			return &stale, nil
+		}
 		return nil, fmt.Errorf("could not fetch weather data")
 	}
 
