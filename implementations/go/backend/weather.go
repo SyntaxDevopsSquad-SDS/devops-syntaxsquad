@@ -48,7 +48,7 @@ type cachedWeather struct {
 	fetchedAt time.Time
 }
 
-const weatherCacheTTL = 10 * time.Minute
+const weatherCacheTTL = 1 * time.Hour
 
 var (
 	weatherCache   = make(map[string]cachedWeather)
