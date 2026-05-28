@@ -651,3 +651,22 @@ func apiResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 	setFlash(w, r, "Password reset successful. Please log in.")
 	http.Redirect(w, r, "/login", http.StatusFound)
 }
+
+func apiLogoutHandler(w http.ResponseWriter, r *http.Request) {
+	session, _ := store.Get(r, "session")
+	if sessionID, ok := session.Values["session_id"].(string); ok && sessionID != "" {
+		recordSessionEnd(sessionID)
+	}
+	delete(session.Values, "user")
+	delete(session.Values, "session_id")
+	if err := session.Save(r, w); err != nil {
+		log.Printf("error saving session: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(map[string]int{"statusCode": 200}); err != nil {
+		log.Printf("error encoding logout response: %v", err)
+	}
+}
