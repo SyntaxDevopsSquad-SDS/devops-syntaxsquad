@@ -16,3 +16,8 @@ repos:
         entry: bash -c 'cd implementations/go && go build -o /tmp/whoknows-check ./...'
         language: system
         pass_filenames: false
+      - id: go-test-compile
+        name: go test compile
+        entry: bash -c 'cd implementations/go && go test -run=^$ ./...'
+        language: system
+        pass_filenames: false
