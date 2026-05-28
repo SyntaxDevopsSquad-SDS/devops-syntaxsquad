@@ -357,13 +357,16 @@ func TestAPILogout(t *testing.T) {
 		}
 	}()
 
-	if resp.StatusCode != http.StatusFound {
-		t.Errorf("Expected redirect (302), got %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("Expected 200, got %d", resp.StatusCode)
 	}
 
-	location := resp.Header.Get("Location")
-	if location != "/" {
-		t.Errorf("Expected redirect to '/', got '%s'", location)
+	var body map[string]int
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("Failed to decode logout response: %v", err)
+	}
+	if body["statusCode"] != 200 {
+		t.Errorf("Expected statusCode 200 in JSON body, got %d", body["statusCode"])
 	}
 }
 
