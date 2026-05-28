@@ -60,7 +60,6 @@ jobs:
           version: v2.10.0
           working-directory: implementations/go
           args: --timeout=5m ./backend/...
-          skip-cache: true
       - name: Build Go application
         run: go build -v -o whoknows-server ./backend/...
       - name: Run Go tests
