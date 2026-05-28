@@ -128,7 +128,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "rate(whoknows_login_attempts_total{outcome=\"success\"}[5m]) / (rate(whoknows_login_attempts_total[5m]) > 0)",
+          "expr": "sum(rate(whoknows_login_attempts_total{outcome=\"success\"}[5m])) / sum(rate(whoknows_login_attempts_total[5m]))",
           "legendFormat": "Success Rate",
           "refId": "A"
         }
