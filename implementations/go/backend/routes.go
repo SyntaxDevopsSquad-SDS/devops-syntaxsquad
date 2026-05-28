@@ -275,6 +275,10 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func registerHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		apiRegisterHandler(w, r)
+		return
+	}
 	if getSessionUser(r) != "" {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
@@ -637,6 +641,9 @@ func apiLogoutHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	setFlash(w, r, "You were logged out")
-	http.Redirect(w, r, "/", http.StatusFound)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(map[string]int{"statusCode": 200}); err != nil {
+		log.Printf("error encoding logout response: %v", err)
+	}
 }

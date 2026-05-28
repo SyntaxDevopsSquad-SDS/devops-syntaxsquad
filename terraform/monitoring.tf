@@ -10,7 +10,7 @@ provider "digitalocean" {
 resource "digitalocean_droplet" "monitoring" {
   name     = "whoknows-monitoring"
   region   = "ams3"
-  size     = "s-1vcpu-2gb"
+  size     = "s-2vcpu-4gb"
   image    = "ubuntu-22-04-x64"
   ssh_keys = [var.do_ssh_key_fingerprint]
 }
