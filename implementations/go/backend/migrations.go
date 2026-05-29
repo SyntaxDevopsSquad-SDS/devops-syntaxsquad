@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -28,7 +28,7 @@ func runMigrations() error {
 	}
 
 	if migrationDir == "" {
-		log.Printf("warning: migrations directory not found, skipping migrations")
+		slog.Warn("migrations directory not found, skipping")
 		return nil
 	}
 
@@ -62,7 +62,7 @@ func runMigrations() error {
 			}
 
 			if _, err := db.Exec(stmt); err != nil {
-				log.Printf("warning: migration %s statement failed (might already exist): %v", file.Name(), err)
+				slog.Warn("migration statement failed, might already exist", "file", file.Name(), "error", err)
 			}
 		}
 

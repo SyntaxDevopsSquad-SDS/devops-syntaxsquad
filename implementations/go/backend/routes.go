@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/gorilla/sessions"
 	"html/template"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
@@ -74,7 +74,7 @@ func setFlash(w http.ResponseWriter, r *http.Request, message string) {
 	session, _ := store.Get(r, "session")
 	session.Values["flash"] = message
 	if err := session.Save(r, w); err != nil {
-		log.Printf("error saving session: %v", err)
+		slog.Error("error saving session", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -91,7 +91,7 @@ func getFlash(w http.ResponseWriter, r *http.Request) string {
 	}
 	delete(session.Values, "flash")
 	if err := session.Save(r, w); err != nil {
-		log.Printf("error saving session: %v", err)
+		slog.Error("error saving session", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return ""
 	}
@@ -106,7 +106,7 @@ func generateAndStoreCSRFToken(w http.ResponseWriter, r *http.Request) string {
 	session, _ := store.Get(r, "session")
 	session.Values["csrf_token"] = token
 	if err := session.Save(r, w); err != nil {
-		log.Printf("error saving session: %v", err)
+		slog.Error("error saving session", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return ""
 	}
@@ -124,7 +124,7 @@ func validateCSRFToken(w http.ResponseWriter, r *http.Request) bool {
 	}
 	delete(session.Values, "csrf_token")
 	if err := session.Save(r, w); err != nil {
-		log.Printf("error saving session: %v", err)
+		slog.Error("error saving session", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return false
 	}
@@ -142,7 +142,7 @@ func requireCSRF(w http.ResponseWriter, r *http.Request, endpoint string) bool {
 		return true
 	}
 	if isCSRFRelaxed() {
-		log.Printf("warning: CSRF check bypassed for %s from %s (CSRF_RELAXED enabled)", endpoint, r.RemoteAddr)
+		slog.Warn("CSRF check bypassed (CSRF_RELAXED enabled)", "endpoint", endpoint, "remote_addr", r.RemoteAddr)
 		return true
 	}
 	http.Error(w, "Invalid or missing CSRF token", http.StatusForbidden)
@@ -195,7 +195,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer func() {
 			if err := rows.Close(); err != nil {
-				log.Printf("error closing rows: %v", err)
+				slog.Error("error closing rows", "error", err)
 			}
 		}()
 
@@ -232,7 +232,7 @@ func searchHandler(w http.ResponseWriter, r *http.Request) {
 		SearchResults: searchResults,
 		Query:         query,
 	}); err != nil {
-		log.Printf("error executing template: %v", err)
+		slog.Error("error executing template", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
@@ -244,7 +244,7 @@ func aboutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := tmpl.ExecuteTemplate(w, "layout", BaseData{User: getSessionUser(r)}); err != nil {
-		log.Printf("error executing template: %v", err)
+		slog.Error("error executing template", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
@@ -265,7 +265,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 		Flash:     getFlash(w, r),
 		CSRFToken: token,
 	}); err != nil {
-		log.Printf("error executing template: %v", err)
+		slog.Error("error executing template", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
@@ -278,7 +278,7 @@ func clearSession(w http.ResponseWriter, r *http.Request) {
 	delete(session.Values, "user")
 	delete(session.Values, "session_id")
 	if err := session.Save(r, w); err != nil {
-		log.Printf("error saving session: %v", err)
+		slog.Error("error saving session", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
@@ -293,7 +293,7 @@ func apiLogoutHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(map[string]int{"statusCode": 200}); err != nil {
-		log.Printf("error encoding logout response: %v", err)
+		slog.Error("error encoding logout response", "error", err)
 	}
 }
 
@@ -316,7 +316,7 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 		User:      getSessionUser(r),
 		CSRFToken: token,
 	}); err != nil {
-		log.Printf("error executing template: %v", err)
+		slog.Error("error executing template", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
@@ -359,7 +359,7 @@ func apiSearchHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer func() {
 			if err := rows.Close(); err != nil {
-				log.Printf("error closing rows: %v", err)
+				slog.Error("error closing rows", "error", err)
 			}
 		}()
 
@@ -389,7 +389,7 @@ func apiSearchHandler(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"search_results": searchResults,
 	}); err != nil {
-		log.Printf("error encoding JSON: %v", err)
+		slog.Error("error encoding JSON", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
@@ -422,7 +422,7 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		tmpl, _ := parseTemplates("layout.html", "login.html")
 		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Invalid username or password"}); err != nil {
-			log.Printf("error executing template: %v", err)
+			slog.Error("error executing template", "error", err)
 		}
 		return
 	}
@@ -432,13 +432,13 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 			newHash, err := hashPassword(password)
 			if err == nil {
 				if _, err := db.Exec("UPDATE users SET password = $1 WHERE username = $2", newHash, username); err != nil {
-					log.Printf("error updating password: %v", err)
+					slog.Error("error updating password", "error", err)
 				}
 			}
 		} else {
 			tmpl, _ := parseTemplates("layout.html", "login.html")
 			if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Invalid username or password"}); err != nil {
-				log.Printf("error executing template: %v", err)
+				slog.Error("error executing template", "error", err)
 			}
 			return
 		}
@@ -464,7 +464,7 @@ func apiLoginHandler(w http.ResponseWriter, r *http.Request) {
 	session.Values["user"] = username
 	session.Values["session_id"] = sessionID
 	if err := session.Save(r, w); err != nil {
-		log.Printf("error saving session: %v", err)
+		slog.Error("error saving session", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -499,7 +499,7 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		outcome = registrationOutcomeValidationError
 		tmpl, _ := parseTemplates("layout.html", "register.html")
 		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "You have to enter a username"}); err != nil {
-			log.Printf("error executing template: %v", err)
+			slog.Error("error executing template", "error", err)
 		}
 		return
 	}
@@ -508,7 +508,7 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		outcome = registrationOutcomeValidationError
 		tmpl, _ := parseTemplates("layout.html", "register.html")
 		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "You have to enter a valid email address"}); err != nil {
-			log.Printf("error executing template: %v", err)
+			slog.Error("error executing template", "error", err)
 		}
 		return
 	}
@@ -517,7 +517,7 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		outcome = registrationOutcomeValidationError
 		tmpl, _ := parseTemplates("layout.html", "register.html")
 		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Password must be at least 8 characters"}); err != nil {
-			log.Printf("error executing template: %v", err)
+			slog.Error("error executing template", "error", err)
 		}
 		return
 	}
@@ -526,14 +526,14 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		outcome = registrationOutcomeValidationError
 		tmpl, _ := parseTemplates("layout.html", "register.html")
 		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "The two passwords do not match"}); err != nil {
-			log.Printf("error executing template: %v", err)
+			slog.Error("error executing template", "error", err)
 		}
 		return
 	}
 
 	var exists int
 	if err := db.QueryRow("SELECT COUNT(*) FROM users WHERE username = $1", username).Scan(&exists); err != nil {
-		log.Printf("error checking username existence: %v", err)
+		slog.Error("error checking username existence", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -541,7 +541,7 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		outcome = registrationOutcomeValidationError
 		tmpl, _ := parseTemplates("layout.html", "register.html")
 		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "The username is already taken"}); err != nil {
-			log.Printf("error executing template: %v", err)
+			slog.Error("error executing template", "error", err)
 		}
 		return
 	}
@@ -561,7 +561,7 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Register error:", err)
 		tmpl, _ := parseTemplates("layout.html", "register.html")
 		if err := tmpl.ExecuteTemplate(w, "layout", BaseData{Error: "Could not create user"}); err != nil {
-			log.Printf("error executing template: %v", err)
+			slog.Error("error executing template", "error", err)
 		}
 		return
 	}
@@ -569,7 +569,7 @@ func apiRegisterHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := store.Get(r, "session")
 	session.Values["user"] = username
 	if err := session.Save(r, w); err != nil {
-		log.Printf("error saving session: %v", err)
+		slog.Error("error saving session", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -595,7 +595,7 @@ func resetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		CSRFToken: token,
 		Flash:     getFlash(w, r),
 	}); err != nil {
-		log.Printf("error executing template: %v", err)
+		slog.Error("error executing template", "error", err)
 	}
 }
 
@@ -643,7 +643,7 @@ func apiResetPasswordHandler(w http.ResponseWriter, r *http.Request) {
 		hashedPassword, userID,
 	)
 	if err != nil {
-		log.Printf("error updating password: %v", err)
+		slog.Error("error updating password", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
