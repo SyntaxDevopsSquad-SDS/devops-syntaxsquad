@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/SyntaxDevopsSquad-SDS/devops-syntaxsquad/actions/workflows/ci.yml/badge.svg)
 ![CD](https://github.com/SyntaxDevopsSquad-SDS/devops-syntaxsquad/actions/workflows/cd.yml/badge.svg)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=SyntaxDevopsSquad-SDS_devops-syntaxsquad&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=SyntaxDevopsSquad-SDS_devops-syntaxsquad)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=syntaxdevopssquad-sds_devops-syntaxsquad&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=SyntaxDevopsSquad-SDS_devops-syntaxsquad)
 [![Uptime](https://img.shields.io/website?url=https%3A%2F%2Fsyntax-reborndev.com%2Fhealth&label=uptime)](https://syntax-reborndev.com/health)
 
 Welcome to the **SyntaxDevopsSquad** main repository. This project is part of our 2026 DevOps module at EK, focusing on migrating a legacy Python Flask application to Go while learning DevOps practices including automation, CI/CD, and infrastructure as code.

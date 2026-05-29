@@ -14,7 +14,7 @@ jobs:
     steps:
       - name: Run smoke test
         run: |
-          URL="http://51.103.136.200:8080"
+          URL="https://syntax-reborndev.com"
 
           HTTP_STATUS=$(curl -o /dev/null -s -w "%{http_code}\n" $URL)
 
