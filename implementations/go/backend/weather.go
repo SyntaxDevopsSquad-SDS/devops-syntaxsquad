@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"sync"
@@ -69,7 +69,7 @@ func fetchCoordinates(city string) (float64, float64, error) {
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("error closing geocoding response body: %v", err)
+			slog.Error("error closing geocoding response body", "error", err)
 		}
 	}()
 
@@ -95,7 +95,7 @@ func fetchWeather(lat, lon float64) (WeatherData, error) {
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Printf("error closing weather response body: %v", err)
+			slog.Error("error closing weather response body", "error", err)
 		}
 	}()
 
@@ -123,7 +123,7 @@ func getWeatherForCity(city string) (*WeatherData, error) {
 
 	lat, lon, err := fetchCoordinates(city)
 	if err != nil {
-		log.Printf("fetchCoordinates error for %q: %v", city, err)
+		slog.Error("fetchCoordinates error", "city", city, "error", err)
 		if ok {
 			stale := cached.data
 			stale.Stale = true
@@ -134,7 +134,7 @@ func getWeatherForCity(city string) (*WeatherData, error) {
 
 	wd, err := fetchWeather(lat, lon)
 	if err != nil {
-		log.Printf("fetchWeather error for %q: %v", city, err)
+		slog.Error("fetchWeather error", "city", city, "error", err)
 		if ok {
 			stale := cached.data
 			stale.Stale = true
@@ -174,7 +174,7 @@ func weatherHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := tmpl.ExecuteTemplate(w, "layout", data); err != nil {
-		log.Printf("error executing template: %v", err)
+		slog.Error("error executing template", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }

@@ -1,18 +1,21 @@
 package main
 
 import (
-	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Structured JSON logging to stdout
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
 	// Load .env file if it exists (ignored in production where env vars are set via systemd)
 	if err := godotenv.Load(); err != nil {
-		log.Printf("Warning: Could not load .env file: %v", err)
+		slog.Warn("could not load .env file", "error", err)
 	}
 
 	// Initialize session store (must happen after godotenv.Load)
@@ -32,7 +35,8 @@ func main() {
 
 	// 2. Run migrations
 	if err := runMigrations(); err != nil {
-		log.Fatalf("Migration failed: %v", err)
+		slog.Error("migration failed", "error", err)
+		os.Exit(1)
 	}
 
 	// Start polling DB for registered users and active sessions every 30s
@@ -59,7 +63,9 @@ func main() {
 	http.HandleFunc("/health", healthHandler)
 	registerMetricsRoute()
 
-	// 6. Start serveren
-	fmt.Println("Server starter på port 8080...")
-	log.Fatal(http.ListenAndServe(":8080", metricsMiddleware(http.DefaultServeMux)))
+	slog.Info("server starting", "port", 8080)
+	if err := http.ListenAndServe(":8080", metricsMiddleware(http.DefaultServeMux)); err != nil {
+		slog.Error("server stopped", "error", err)
+		os.Exit(1)
+	}
 }
