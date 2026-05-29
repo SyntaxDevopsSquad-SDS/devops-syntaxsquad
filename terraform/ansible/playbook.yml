@@ -237,7 +237,16 @@
           server {
               listen 80;
               server_name syntax-reborndev.com www.syntax-reborndev.com;
-              return 301 https://$host$request_uri;
+
+              location /metrics {
+                  allow {{ monitoring_ip }};
+                  deny all;
+                  proxy_pass http://localhost:8080/metrics;
+              }
+
+              location / {
+                  return 301 https://$host$request_uri;
+              }
           }
         mode: "0644"
 

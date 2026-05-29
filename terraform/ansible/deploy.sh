@@ -21,7 +21,8 @@ echo ""
 echo "⚙️  Konfigurerer app VM med Ansible..."
 cd ansible
 perl -pi -e 's/\r//' inventory.ini
-ansible-playbook -i inventory.ini playbook.yml
+ansible-playbook -i inventory.ini playbook.yml \
+  -e "monitoring_ip=$MONITORING_IP"
 
 echo ""
 echo "📊 Konfigurerer monitoring VM med Ansible..."
