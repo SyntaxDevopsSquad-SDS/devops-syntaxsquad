@@ -10,10 +10,12 @@ COPY implementations/go/templates ./templates
 COPY implementations/go/static ./static
 COPY implementations/go/schema.sql ./schema.sql
 
-RUN cd backend && go build -o /out/whoknows .
+WORKDIR /src/implementations/go/backend
+RUN go build -o /out/whoknows .
 
 FROM debian:bookworm-slim
 
+# hadolint ignore=DL3008
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates postgresql-client \
     && rm -rf /var/lib/apt/lists/*
