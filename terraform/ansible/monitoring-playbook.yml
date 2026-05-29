@@ -152,7 +152,7 @@
           scrape_configs:
             - job_name: 'whoknows-go-backend'
               static_configs:
-                - targets: ['{{ app_ip }}:8080']
+                - targets: ['{{ app_ip }}:80']
               metrics_path: '/metrics'
 
     # ─── Grafana provisioning (datasource + dashboards) ────────────────────────
