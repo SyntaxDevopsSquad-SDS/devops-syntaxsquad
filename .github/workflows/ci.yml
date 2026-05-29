@@ -6,6 +6,19 @@ on:
     branches: [main]
 
 jobs:
+  hadolint:
+    name: Lint Dockerfile
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: implementations/go/Dockerfile
+
   go-ci:
     name: Go Build & Tests
     runs-on: ubuntu-latest
