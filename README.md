@@ -59,7 +59,7 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 - **Development Environment:** WSL (Ubuntu 22.04)
 
 ### Monitoring Stack
-- **Metrics:** Prometheus (scrapes `/metrics` on app VM port 8080)
+- **Metrics:** Prometheus (scrapes `/metrics` via nginx port 80, restricted to monitoring VM IP)
 - **Dashboards:** Grafana (auto-provisioned with datasource + 3 dashboards via Ansible)
 - **Watchdog:** Cron job on monitoring VM - checks `/health` every 5 minutes, auto-restarts app via SSH after 3 consecutive failures
 - **Deployment:** Separate DigitalOcean VM for resilience (survives Azure app VM destroy)
@@ -82,14 +82,17 @@ devops-syntaxsquad/
 ├── docs/
 │   ├── pipeline-overview.puml           # DevOps lifecycle diagram (PlantUML source)
 │   ├── Pipeline.png                     # Rendered pipeline diagram
-│   ├── openapi.yaml                     # API specification
+│   ├── SLA.md                           # Service Level Agreement
+│   ├── monitoring_repo_prompt.md
 │   └── mandatory/
-│       ├── BRANCHING_STRATEGY.md        # Git branching documentation
-│       ├── dependency_graph.dot         # System architecture (Graphviz source)
-│       ├── dependency_graph_picture.svg # Rendered architecture diagram
-│       ├── mandatory_ii.md              # DevOps reflection task II
-│       ├── monitoring_repo_prompt.md
-│       └── technical_audit.md           # Technical audit report
+│       ├── mandatory-I/                 # Mandatory assignment I
+│       │   ├── BRANCHING_STRATEGY.md    # Git branching documentation
+│       │   ├── dependency_graph.dot     # System architecture (Graphviz source)
+│       │   ├── dependency_graph_picture.svg
+│       │   ├── openapi.yaml             # API specification
+│       │   └── technical_audit.md      # Technical audit report
+│       └── mandatory-II/               # Mandatory assignment II
+│           └── mandatory_ii.md         # DevOps reflection (branching, quality, monitoring, postmortem)
 ├── implementations/
 │   └── go/                              # Active Go implementation
 │       ├── Dockerfile
