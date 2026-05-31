@@ -26,7 +26,7 @@ groups:
               to: 0
             datasourceUid: prometheus
             model:
-              expr: up{job="whoknows-app"}
+              expr: up{job="whoknows-go-backend"}
               instant: true
               refId: A
           - refId: B
