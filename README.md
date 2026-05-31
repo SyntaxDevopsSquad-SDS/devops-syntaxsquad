@@ -42,25 +42,26 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 - **Language:** Go 1.25.0
 - **Database:** PostgreSQL 16 with `github.com/lib/pq`
 - **Session Management:** Gorilla Sessions
+- **Logging:** Structured JSON logging via `log/slog`
 
 ### Infrastructure & DevOps
 - **Cloud Platforms:** Azure (app VM) + DigitalOcean (monitoring VM)
 - **Containerization:** Docker + Docker Compose (dev & prod)
-- **CI/CD:** GitHub Actions (`ci.yml`, `cd.yml`, `dependabot-auto-merge.yml`)
+- **CI/CD:** GitHub Actions (`ci.yml`, `cd.yml`, `dependabot-auto-merge.yml`) — CI includes Hadolint (Dockerfile linting), CD includes Trivy (image vulnerability scanning). All actions SHA-pinned.
 - **Infrastructure as Code:** Terraform (Azure VM, network, firewall, DigitalOcean droplet, Cloudflare DNS)
 - **Configuration Management:** Ansible (Docker, Nginx, fail2ban, UFW, swap, disk mount)
 - **DNS:** Cloudflare (automatic A-record update on deploy)
 - **Persistent Storage:** Azure Managed Disk (Postgres data), DigitalOcean Volume (Prometheus data) - both managed outside Terraform lifecycle
 - **Remote State:** Terraform state stored in Azure Blob Storage
-- **Server Security:** fail2ban, UFW
+- **Server Security:** fail2ban, UFW, port 8080 bound to `127.0.0.1` (nginx-only access)
 - **Linting:** `golangci-lint`
 - **Code Quality:** SonarCloud (Automatic Analysis)
 - **Version Control:** Git with Conventional Commits
 - **Development Environment:** WSL (Ubuntu 22.04)
 
 ### Monitoring Stack
-- **Metrics:** Prometheus (scrapes `/metrics` via nginx port 80, restricted to monitoring VM IP)
-- **Dashboards:** Grafana (auto-provisioned with datasource + 3 dashboards via Ansible)
+- **Metrics:** Prometheus (scrapes `/metrics` via nginx on app VM port 80, restricted to monitoring VM IP)
+- **Dashboards:** Grafana (auto-provisioned with datasource + 4 dashboards via Ansible: auth, business, requests, overview)
 - **Watchdog:** Cron job on monitoring VM - checks `/health` every 5 minutes, auto-restarts app via SSH after 3 consecutive failures
 - **Deployment:** Separate DigitalOcean VM for resilience (survives Azure app VM destroy)
 
@@ -327,7 +328,7 @@ Postgres and Prometheus data are **not deleted**. They live on persistent disks 
 
 ## Monitoring (Prometheus + Grafana)
 
-The Go backend exposes metrics at `GET /metrics` (port 8080) and a health check at `GET /health`.
+The Go backend exposes metrics at `GET /metrics` (served via nginx port 80, restricted to monitoring VM IP) and a health check at `GET /health`.
 
 Prometheus and Grafana run on a separate DigitalOcean VM. Grafana dashboards and the Prometheus datasource are auto-provisioned via Ansible on every deploy, no manual setup required.
 
@@ -432,7 +433,7 @@ We follow **Conventional Commits** for clean and readable history:
 
 ### Branch Strategy
 
-See [`docs/mandatory/BRANCHING_STRATEGY.md`](docs/mandatory/BRANCHING_STRATEGY.md) for the full strategy.
+See [`docs/mandatory/mandatory-I/BRANCHING_STRATEGY.md`](docs/mandatory/mandatory-I/BRANCHING_STRATEGY.md) for the full strategy.
 
 We follow **GitHub Flow**:
 
