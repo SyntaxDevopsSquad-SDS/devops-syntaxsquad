@@ -15,7 +15,7 @@
             <h1><a id="nav-logo" href="/search">¿Who Knows?</a></h1>
             <div class="nav-right">
                 {{ if .User }}
-                    <a id="nav-logout" href="#" onclick="logoutUser(); return false;">Log out [{{ .User }}]</a>
+                    <a id="nav-logout" href="/logout">Log out [{{ .User }}]</a>
                 {{ else }}
                     <a id="nav-login" href="/login">Log in</a>
                     <a id="nav-register" href="/register">Register</a>
@@ -38,17 +38,6 @@
     </div>
 </div>
 <script>
-    function logoutUser() {
-        fetch('/api/logout')
-            .then(response => response.json())
-            .then(data => {
-                if (data.statusCode === 200) {
-                    sessionStorage.setItem('flash', 'You were logged out successfully.');
-                    window.location.href = '/';
-                }
-            });
-    }
-
     document.addEventListener("DOMContentLoaded", function() {
         const toastMsg = sessionStorage.getItem('flash');
         if (toastMsg) {
