@@ -26,7 +26,7 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 - **Security:** CSRF protection, middleware, and breach response tooling
 - **Database:** PostgreSQL with native full-text search
 - **Health Check:** `GET /health` endpoint for uptime monitoring and watchdog integration
-- **Weather Forecast:** `GET /weather` – city-based weather forecast via Open-Meteo API with in-memory cache (10 min TTL)
+- **Weather Forecast:** `GET /weather` - city-based weather forecast via Open-Meteo API with in-memory cache (10 min TTL)
 
 ### Team Members
 - **CodeByNajib** (NajibGPT)
@@ -47,7 +47,7 @@ Welcome to the **SyntaxDevopsSquad** main repository. This project is part of ou
 ### Infrastructure & DevOps
 - **Cloud Platforms:** Azure (app VM) + DigitalOcean (monitoring VM)
 - **Containerization:** Docker + Docker Compose (dev & prod)
-- **CI/CD:** GitHub Actions (`ci.yml`, `cd.yml`, `dependabot-auto-merge.yml`) — CI includes Hadolint (Dockerfile linting), CD includes Trivy (image vulnerability scanning). All actions SHA-pinned.
+- **CI/CD:** GitHub Actions (`ci.yml`, `cd.yml`, `dependabot-auto-merge.yml`) - CI includes Hadolint (Dockerfile linting), CD includes Trivy (image vulnerability scanning). All actions SHA-pinned.
 - **Infrastructure as Code:** Terraform (Azure VM, network, firewall, DigitalOcean droplet, Cloudflare DNS)
 - **Configuration Management:** Ansible (Docker, Nginx, fail2ban, UFW, swap, disk mount)
 - **DNS:** Cloudflare (automatic A-record update on deploy)
